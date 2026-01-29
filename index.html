@@ -43,7 +43,6 @@
         .stat-big { font-size: 2.4rem; font-weight: 700; line-height: 1; margin: 5px 0; }
         .stat-lbl { font-size: 0.8rem; opacity: 0.9; font-weight: 500;}
 
-        /* Lists */
         .log-item { display: flex; align-items: center; padding: 14px; background: var(--surface); border-radius: 16px; margin-bottom: 10px; border: 1px solid var(--line); }
         .log-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 1rem; }
         .icon-ot { background: var(--tag-ot); color: var(--tag-ot-text); }
@@ -53,7 +52,6 @@
         .log-date { font-size: 0.75rem; color: var(--text-sub); margin-top: 2px; }
         .log-val { font-weight: 700; color: var(--primary-dark); font-size: 1rem;}
 
-        /* Settings UI */
         .import-box { border: 2px dashed #d4c5b9; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; background: #faf9f7; cursor: pointer; transition: 0.2s; }
         .import-box:active { background: #e8e4e0; }
         .import-box i { font-size: 1.5rem; color: var(--primary); margin-bottom: 5px; }
@@ -93,7 +91,7 @@
 
     <div id="loadingMask">
         <i class="fa-solid fa-cloud fa-bounce" style="font-size:3rem"></i>
-        <span>載入 Work-Life Balance...</span>
+        <span>同步 Work-Life Balance 資料庫...</span>
     </div>
 
     <header>
@@ -121,7 +119,7 @@
                     </div>
                 </div>
             </div>
-            <h3 style="margin:0 0 12px 0; font-size:1rem; color:var(--text-sub); display:flex; justify-content:space-between;">
+            <h3 style="margin:0 0 12px 0; font-size:1rem; color:var(--text-sub); display:flex; justify-content:space-between; align-items:center;">
                 <span>當日概覽</span>
                 <span id="dateTitleLabel" style="font-weight:400; font-size:0.85rem;"></span>
             </h3>
@@ -221,7 +219,7 @@
         import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ==========================================
-        // TODO: 請填入你的 Firebase Config
+        // 你的專屬 Firebase Config (已自動填入)
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyAi_iDY4JeppmveW5-Uq2cMRWJY9jeT9Dw",
@@ -253,7 +251,6 @@
             const loading = document.getElementById('loadingMask');
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                // Data Migration for safety
                 if(!data.settings.workMode) data.settings.workMode = 'alt_sat';
                 if(data.settings.holidays.length > 0 && typeof data.settings.holidays[0] === 'string') {
                     data.settings.holidays = data.settings.holidays.map(d => ({date: d, name: '假期'}));
@@ -262,7 +259,7 @@
                 refreshApp();
             } else { setDoc(docRef, localData); }
             if(loading) { loading.style.opacity = '0'; setTimeout(()=>loading.style.display='none', 500); }
-        }, (err) => { alert("連線失敗"); document.getElementById('loadingMask').style.display='none'; });
+        }, (err) => { alert("連線失敗：" + err.message); document.getElementById('loadingMask').style.display='none'; });
 
         window.app = {
             openSettings: () => {
@@ -282,16 +279,17 @@
                 document.getElementById('satSetting').style.display = mode==='alt_sat' ? 'block' : 'none';
             },
             saveSettings: async () => {
-                const s = localData.settings;
-                // FIX: 不再讀取不存在的 setHolidays textarea
-                s.baseSat = document.getElementById('setBaseSat').value;
-                s.joinDate = document.getElementById('setJoinDate').value;
-                s.alBalance = Number(document.getElementById('setAL').value);
-                s.dailyHours = Number(document.getElementById('setDaily').value);
-                await pushToCloud();
-                document.getElementById('setModal').classList.remove('open');
+                try {
+                    const s = localData.settings;
+                    s.baseSat = document.getElementById('setBaseSat').value;
+                    s.joinDate = document.getElementById('setJoinDate').value;
+                    s.alBalance = Number(document.getElementById('setAL').value);
+                    s.dailyHours = Number(document.getElementById('setDaily').value);
+                    await pushToCloud();
+                    document.getElementById('setModal').classList.remove('open');
+                    alert("設定已儲存！");
+                } catch(e) { alert("儲存設定失敗：" + e.message); }
             },
-            // Import Logic
             importHolidays: (input) => {
                 const file = input.files[0]; if(!file) return;
                 const r = new FileReader();
@@ -331,7 +329,6 @@
             clearHolidays: () => { if(confirm("確定清空？")) { localData.settings.holidays=[]; renderHolidayList(); } },
             deleteHoliday: (d) => { localData.settings.holidays = localData.settings.holidays.filter(h=>h.date!==d); renderHolidayList(); },
             
-            // UI Controls
             triggerAdd: () => openModal(),
             closeModal: () => document.getElementById('recModal').classList.remove('open'),
             switchTab: (t) => {
@@ -349,7 +346,7 @@
             list.innerHTML = sorted.length ? sorted.map(h => `<div class="holiday-item"><span><span class="holiday-date">${h.date}</span><span>${h.name}</span></span><i class="fa-solid fa-trash" style="color:#ef4444;cursor:pointer" onclick="window.app.deleteHoliday('${h.date}')"></i></div>`).join('') : '<div style="text-align:center;color:#ccc;font-size:0.8rem">無假期</div>';
         }
 
-        async function pushToCloud() { try { await setDoc(docRef, localData); } catch(e) { console.error(e); } }
+        async function pushToCloud() { await setDoc(docRef, localData); }
 
         function getDayStatus(d) {
             const dStr = d.toISOString().split('T')[0];
@@ -441,13 +438,15 @@
         }
         async function saveRecord(e) {
             e.preventDefault();
-            const val = curType==='OT' ? document.getElementById('inpHours').value : document.getElementById('inpDays').value;
-            if(!val) return;
-            const rec = { id: editId||Date.now(), date: selectedDate.toISOString().split('T')[0], type: curType, subType: curType==='Leave'?document.getElementById('inpLeaveType').value:null, val: val, note: document.getElementById('inpNote').value };
-            if(editId) localData.records = localData.records.filter(r=>r.id!==editId);
-            localData.records.push(rec); await pushToCloud(); window.app.closeModal();
+            try {
+                const val = curType==='OT' ? document.getElementById('inpHours').value : document.getElementById('inpDays').value;
+                if(!val) return alert("請輸入數值");
+                const rec = { id: editId||Date.now(), date: selectedDate.toISOString().split('T')[0], type: curType, subType: curType==='Leave'?document.getElementById('inpLeaveType').value:null, val: val, note: document.getElementById('inpNote').value };
+                if(editId) localData.records = localData.records.filter(r=>r.id!==editId);
+                localData.records.push(rec); await pushToCloud(); window.app.closeModal();
+            } catch(err) { alert("儲存失敗：" + err.message); }
         }
-        async function delRecord() { if(editId) { localData.records = localData.records.filter(r=>r.id!==editId); await pushToCloud(); window.app.closeModal(); } }
+        async function delRecord() { if(editId) { try { localData.records = localData.records.filter(r=>r.id!==editId); await pushToCloud(); window.app.closeModal(); } catch(e){ alert("刪除失敗"); } } }
         
         setTimeout(()=> {
             const chip = Array.from(document.querySelectorAll('.date-chip')).find(el => el.innerHTML.includes(selectedDate.getDate()));
