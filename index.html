@@ -3,78 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>貴生·重己.</title>
+    <title>Work-Life Balance</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-body: #f7f4ef; --surface: #ffffff;
-            --primary: #8c7b70; --primary-dark: #5e5046;
-            --text-main: #4a403a; --text-sub: #998f8a;
-            --tag-ot: #ebe5df; --tag-ot-text: #6e5d53;
-            --tag-off: #e3ebe3; --tag-off-text: #5d7a5f;
-            --radius: 20px;
-            --shadow: 0 4px 20px rgba(140, 123, 112, 0.08);
+            /* 視覺升級：更清爽的介面 */
+            --bg-body: #fdfcf8;
+            --surface: #ffffff;
+            --primary: #8c7b70;
+            --primary-dark: #5e5046;
+            --text-main: #4a403a;
+            --text-sub: #998f8a;
+            --line: #eeeae5;
+            
+            --tag-ot: #f2ebe6; --tag-ot-text: #6e5d53;
+            --tag-off: #e6f0e6; --tag-off-text: #5d7a5f;
+            --tag-holiday: #fff1f2; --tag-holiday-text: #e11d48;
+
+            --radius: 18px;
+            --shadow: 0 4px 20px rgba(140, 123, 112, 0.06);
         }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: "Hiragino Sans", "PingFang TC", sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { padding: 20px 24px; padding-top: max(20px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; background: var(--bg-body); }
-        h1 { margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); letter-spacing: 0.5px; }
-        .btn-icon { background: none; border: none; font-size: 1.2rem; color: var(--primary); cursor: pointer; padding: 8px; transition: 0.2s;}
-        
+        body {
+            font-family: "Hiragino Sans", "PingFang TC", sans-serif;
+            background-color: var(--bg-body); color: var(--text-main);
+            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            padding: 18px 24px; padding-top: max(18px, env(safe-area-inset-top));
+            display: flex; justify-content: space-between; align-items: center; background: var(--bg-body);
+        }
+        h1 { margin: 0; font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); letter-spacing: 0.5px; }
+        .btn-icon { background: none; border: none; font-size: 1.2rem; color: var(--primary); cursor: pointer; padding: 8px; transition: 0.2s; }
+        .btn-icon:hover { color: var(--primary-dark); transform: rotate(15deg); }
+
         /* Scroller */
         .date-scroller-wrap { padding: 5px 0 15px 0; background: var(--bg-body); }
-        .date-scroller { display: flex; overflow-x: auto; gap: 10px; padding: 0 24px; scrollbar-width: none; }
+        .date-scroller { display: flex; overflow-x: auto; gap: 8px; padding: 0 24px; scrollbar-width: none; }
         .date-scroller::-webkit-scrollbar { display: none; }
-        .date-chip { min-width: 54px; height: 70px; background: var(--surface); border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); flex-shrink: 0; cursor: pointer; transition: 0.3s; border: 1px solid transparent; position: relative; }
-        .date-chip.active { background: var(--primary); color: white; transform: translateY(-3px); box-shadow: 0 8px 15px -3px rgba(140, 123, 112, 0.3); }
+        .date-chip {
+            min-width: 52px; height: 68px; background: var(--surface); border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-sub); flex-shrink: 0; cursor: pointer; transition: 0.2s;
+            border: 1px solid var(--line); position: relative;
+        }
+        .date-chip span:first-child { font-size: 0.7rem; margin-bottom: 2px; }
+        .date-chip span:last-child { font-size: 1.1rem; font-weight: 700; }
+        
+        .date-chip.active { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(140, 123, 112, 0.3); }
         .date-chip.is-holiday { border-color: #fca5a5; background: #fff1f2; color: #e11d48; }
         .date-chip.active.is-holiday { background: var(--primary); border-color: transparent; color: white; }
-        .has-data-dot { width:5px; height:5px; background:var(--primary); border-radius:50%; position:absolute; bottom:6px; display:none;}
+        
+        .has-data-dot { width:5px; height:5px; background:var(--primary); border-radius:50%; position:absolute; bottom:5px; display:none;}
         .date-chip.has-data .has-data-dot { display:block; }
         .date-chip.active .has-data-dot { background:white; }
 
+        /* Main Content */
         main { flex: 1; overflow-y: auto; padding: 0 24px 100px 24px; }
-        .card { background: var(--surface); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
-        .summary-card { background: linear-gradient(135deg, #b0a096 0%, #8c7b70 100%); color: white; }
+        .card { background: var(--surface); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid var(--line); }
+        
+        .summary-card { background: linear-gradient(135deg, #b0a096 0%, #8c7b70 100%); color: white; border: none; }
         .stat-row { display: flex; justify-content: space-between; align-items: flex-end; }
-        .stat-big { font-size: 2.6rem; font-weight: 700; line-height: 1; margin: 4px 0; }
+        .stat-big { font-size: 2.4rem; font-weight: 700; line-height: 1; margin: 5px 0; }
         .stat-lbl { font-size: 0.8rem; opacity: 0.9; font-weight: 500;}
 
-        .log-item { display: flex; align-items: center; padding: 16px; background: var(--surface); border-radius: 18px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        .log-icon { width: 42px; height: 42px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-right: 14px; font-size: 1.1rem; }
+        /* List Items */
+        .log-item { display: flex; align-items: center; padding: 14px; background: var(--surface); border-radius: 16px; margin-bottom: 10px; border: 1px solid var(--line); }
+        .log-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 1rem; }
         .icon-ot { background: var(--tag-ot); color: var(--tag-ot-text); }
         .icon-leave { background: var(--tag-off); color: var(--tag-off-text); }
         .log-main { flex: 1; }
         .log-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
-        .log-date { font-size: 0.75rem; color: var(--text-sub); margin-top: 3px; }
-        .log-val { font-weight: 700; color: var(--primary-dark); font-size: 1.1rem;}
+        .log-date { font-size: 0.75rem; color: var(--text-sub); margin-top: 2px; }
+        .log-val { font-weight: 700; color: var(--primary-dark); font-size: 1rem;}
 
-        .fab { position: fixed; bottom: 90px; right: 24px; width: 60px; height: 60px; border-radius: 22px; background: var(--primary-dark); color: #fff; border: none; font-size: 1.5rem; box-shadow: 0 12px 25px rgba(94, 80, 70, 0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 50; transition: transform 0.2s; }
-        .fab:active { transform: scale(0.92); }
+        /* Settings Specific */
+        .import-box { border: 2px dashed #d4c5b9; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; background: #faf9f7; cursor: pointer; transition: 0.2s; }
+        .import-box:hover { border-color: var(--primary); background: #f0ebe8; }
+        .import-box i { font-size: 1.5rem; color: var(--primary); margin-bottom: 5px; }
+        .import-box p { margin: 0; font-size: 0.85rem; color: var(--text-main); font-weight: 600; }
+        .import-box span { font-size: 0.75rem; color: var(--text-sub); }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(74, 64, 58, 0.5); backdrop-filter: blur(4px); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; display: flex; align-items: flex-end; }
-        .modal-overlay.open { opacity: 1; pointer-events: auto; }
-        .modal-card { background: var(--surface); width: 100%; border-radius: 32px 32px 0 0; padding: 32px 24px 50px 24px; transform: translateY(100%); transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); max-height: 85vh; overflow-y: auto; }
-        .modal-overlay.open .modal-card { transform: translateY(0); }
+        .holiday-list { max-height: 200px; overflow-y: auto; background: #faf9f7; border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--line); }
+        .holiday-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .holiday-item:last-child { border-bottom: none; }
+        .holiday-name { color: var(--text-main); font-weight: 600; }
+        .holiday-date { color: var(--text-sub); font-size: 0.8rem; margin-right: 10px; }
 
-        .form-label { font-size: 0.85rem; font-weight: 700; color: var(--text-sub); margin: 16px 0 8px 0; display: block; }
-        .form-input { width: 100%; padding: 16px; border: 2px solid var(--bg-body); background: var(--bg-body); border-radius: 16px; font-size: 1rem; color: var(--text-main); transition:0.2s; -webkit-appearance: none;}
+        /* Forms */
+        .form-label { font-size: 0.85rem; font-weight: 700; color: var(--text-sub); margin: 15px 0 8px 0; display: block; }
+        .form-input { width: 100%; padding: 14px; border: 2px solid var(--line); background: #faf9f7; border-radius: 14px; font-size: 1rem; color: var(--text-main); -webkit-appearance: none; }
         .form-input:focus { background: white; border-color: var(--primary); }
         
-        .btn { width: 100%; padding: 16px; border-radius: 16px; border: none; font-weight: 700; font-size: 1rem; margin-top: 24px; cursor: pointer; transition: 0.2s; }
-        .btn-primary { background: var(--primary-dark); color: white; box-shadow: 0 5px 15px rgba(94, 80, 70, 0.2); }
+        .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 1rem; margin-top: 20px; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: var(--primary-dark); color: white; box-shadow: 0 4px 12px rgba(94, 80, 70, 0.2); }
         .btn-outline { background: transparent; border: 2px solid #ef4444; color: #ef4444; margin-top: 10px; }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 12px 0 24px 0; display: flex; justify-content: space-around; border-top: 1px solid rgba(0,0,0,0.03); z-index: 60; }
+        /* Toggle Button Group */
+        .toggle-group { display:flex; gap:10px; margin-bottom:10px; }
+        .toggle-opt { flex:1; padding:12px; border:2px solid var(--line); border-radius:12px; background:#fff; color:var(--text-sub); font-size:0.9rem; font-weight:600; text-align:center; cursor:pointer; }
+        .toggle-opt.active { border-color:var(--primary); color:var(--primary-dark); background:#fdfbf9; }
+
+        /* Modal & UI */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(74, 64, 58, 0.5); backdrop-filter: blur(4px); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; display: flex; align-items: flex-end; }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal-card { background: var(--surface); width: 100%; border-radius: 30px 30px 0 0; padding: 30px 24px 50px 24px; transform: translateY(100%); transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); max-height: 90vh; overflow-y: auto; }
+        .modal-overlay.open .modal-card { transform: translateY(0); }
+        
+        .fab { position: fixed; bottom: 90px; right: 24px; width: 58px; height: 58px; border-radius: 20px; background: var(--primary-dark); color: #fff; border: none; font-size: 1.5rem; box-shadow: 0 10px 25px rgba(94, 80, 70, 0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 50; }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 12px 0 24px 0; display: flex; justify-content: space-around; border-top: 1px solid var(--line); z-index: 60; }
         .nav-btn { background: none; border: none; color: #ccc; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 600; cursor: pointer;}
         .nav-btn.active { color: var(--primary-dark); }
-        .nav-btn i { font-size: 1.4rem; transition: 0.2s;}
-        .nav-btn.active i { transform: translateY(-3px); }
-        
+        .nav-btn i { font-size: 1.4rem; }
+
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeUp 0.3s; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
-        
         #loadingMask { position:fixed; inset:0; background:var(--bg-body); z-index:2000; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:15px; color:var(--primary); font-weight:bold; transition: opacity 0.5s;}
     </style>
 </head>
@@ -82,11 +130,11 @@
 
     <div id="loadingMask">
         <i class="fa-solid fa-cloud fa-bounce" style="font-size:3rem"></i>
-        <span>同步私人雲端中...</span>
+        <span>同步 Work-Life Balance 資料庫...</span>
     </div>
 
     <header>
-        <h1>My Space.</h1>
+        <h1>Work-Life Balance</h1>
         <button class="btn-icon" onclick="window.app.openSettings()"><i class="fa-solid fa-sliders"></i></button>
     </header>
 
@@ -99,7 +147,7 @@
             <div class="card summary-card">
                 <div class="stat-row">
                     <div>
-                        <div class="stat-lbl">OT 總時數</div>
+                        <div class="stat-lbl">OT 累積</div>
                         <div class="stat-big" id="dispOT">--</div>
                         <div class="stat-lbl" style="opacity:0.9">≈ <span id="dispOTDays">--</span> 天補休</div>
                     </div>
@@ -111,9 +159,9 @@
                 </div>
             </div>
 
-            <h3 style="margin:0 0 12px 0; font-size:1rem; color:var(--text-sub); display:flex; justify-content:space-between;">
-                <span>當日紀錄</span>
-                <span id="dateTitleLabel" style="font-weight:400"></span>
+            <h3 style="margin:0 0 12px 0; font-size:1rem; color:var(--text-sub); display:flex; justify-content:space-between; align-items:center;">
+                <span>當日概覽</span>
+                <span id="dateTitleLabel" style="font-weight:400; font-size:0.85rem;"></span>
             </h3>
             <div id="dayRecords"></div>
         </div>
@@ -138,13 +186,16 @@
     <div class="modal-overlay" id="recModal" onclick="if(event.target===this) window.app.closeModal()">
         <div class="modal-card">
             <h3 id="modalDateTitle" style="margin-top:0; font-size:1.4rem;">新紀錄</h3>
+            
             <form id="recForm" onsubmit="window.app.saveRecord(event)">
                 <input type="hidden" id="editId">
                 <input type="hidden" id="recType" value="OT">
-                <div style="display:flex; background:var(--bg-body); padding:5px; border-radius:18px; margin-bottom:25px;">
-                    <button type="button" id="btnTypeOT" class="btn" style="margin:0; background:var(--surface); color:var(--primary-dark); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onclick="window.app.setType('OT')">加班 OT</button>
+
+                <div style="display:flex; background:#faf9f7; padding:5px; border-radius:18px; margin-bottom:25px; border:1px solid var(--line);">
+                    <button type="button" id="btnTypeOT" class="btn" style="margin:0; background:white; color:var(--primary-dark); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onclick="window.app.setType('OT')">加班 OT</button>
                     <button type="button" id="btnTypeLeave" class="btn" style="margin:0; background:transparent; color:var(--text-sub); box-shadow:none;" onclick="window.app.setType('Leave')">請假</button>
                 </div>
+
                 <div id="secOT">
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <div>
@@ -160,6 +211,7 @@
                     <label class="form-label">OT 時數</label>
                     <input type="number" step="0.1" class="form-input" id="inpHours" placeholder="自動計算或手動輸入">
                 </div>
+
                 <div id="secLeave" style="display:none;">
                     <label class="form-label">假別</label>
                     <select class="form-input" id="inpLeaveType">
@@ -169,8 +221,10 @@
                     <label class="form-label">天數</label>
                     <input type="number" step="0.5" class="form-input" id="inpDays" value="1">
                 </div>
+
                 <label class="form-label">備註</label>
                 <input type="text" class="form-input" id="inpNote" placeholder="選填...">
+
                 <button type="submit" class="btn btn-primary">儲存紀錄</button>
                 <button type="button" class="btn btn-outline" style="display:none;" id="btnDel" onclick="window.app.delRecord()">刪除</button>
             </form>
@@ -179,17 +233,50 @@
 
     <div class="modal-overlay" id="setModal" onclick="if(event.target===this) document.getElementById('setModal').classList.remove('open')">
         <div class="modal-card">
-            <h3>系統設定</h3>
-            <label class="form-label">長短週基準日</label>
-            <input type="date" class="form-input" id="setBaseSat">
+            <h3 style="margin-top:0">設定與資料</h3>
+            
+            <label class="form-label">工作模式 (週六安排)</label>
+            <div class="toggle-group">
+                <div class="toggle-opt" id="modeMonFri" onclick="window.app.setWorkMode('mon_fri')">一至五<br><span style="font-size:0.7rem; font-weight:normal">週六休假</span></div>
+                <div class="toggle-opt" id="modeAltSat" onclick="window.app.setWorkMode('alt_sat')">長短週<br><span style="font-size:0.7rem; font-weight:normal">隔週輪值</span></div>
+            </div>
+            
+            <div id="satSetting" style="display:none; margin-top:10px;">
+                <label class="form-label">長短週基準日 (任一上班週六)</label>
+                <input type="date" class="form-input" id="setBaseSat">
+            </div>
+
+            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                法定假期管理
+                <span style="font-size:0.75rem; color:var(--primary); cursor:pointer;" onclick="window.app.clearHolidays()">清空所有</span>
+            </label>
+            <div class="holiday-list" id="holidayListDisplay">
+                </div>
+            
+            <input type="file" id="fileHoliday" accept=".csv" style="display:none" onchange="window.app.importHolidays(this)">
+            <div class="import-box" onclick="document.getElementById('fileHoliday').click()">
+                <i class="fa-solid fa-file-csv"></i>
+                <p>匯入假期 Excel (CSV)</p>
+                <span>格式: 日期(YYYY-MM-DD), 節日名稱</span>
+            </div>
+
+            <input type="file" id="fileRecord" accept=".csv" style="display:none" onchange="window.app.importRecords(this)">
+            <div class="import-box" onclick="document.getElementById('fileRecord').click()">
+                <i class="fa-solid fa-table"></i>
+                <p>匯入紀錄 Excel (CSV)</p>
+                <span>格式: 日期, 類型(OT/Leave), 數值, 備註</span>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+
             <label class="form-label">入職日期</label>
             <input type="date" class="form-input" id="setJoinDate">
-            <label class="form-label">假期設定 (YYYY-MM-DD)</label>
-            <textarea class="form-input" id="setHolidays" rows="3" style="font-family:monospace;"></textarea>
+            
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                 <div><label class="form-label">年假剩餘</label><input type="number" class="form-input" id="setAL"></div>
                 <div><label class="form-label">日工時</label><input type="number" class="form-input" id="setDaily"></div>
             </div>
+            
             <button class="btn btn-primary" onclick="window.app.saveSettings()">儲存設定</button>
         </div>
     </div>
@@ -198,7 +285,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Firebase Config
+        // ==========================================
+        // TODO: 請填入你的 Firebase Config
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyAi_iDY4JeppmveW5-Uq2cMRWJY9jeT9Dw",
             authDomain: "work-life-balance-9f09b.firebaseapp.com",
@@ -208,28 +297,47 @@
             appId: "1:869347289477:web:c2bee07bc2aeb92973bcec",
             measurementId: "G-94EXTK7W8Y"
         };
+        // ==========================================
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const docRef = doc(db, "worklife_app", "personal_data");
+        const docRef = doc(db, "worklife_app", "personal_data_v2");
 
+        // 預設資料結構 (升級版)
         const PRESET_HOLIDAYS = [
-            "2025-01-01", "2025-01-29", "2025-01-30", "2025-01-31", "2025-04-04", "2025-04-18", "2025-04-19", "2025-04-21", "2025-05-01", "2025-05-05", "2025-05-31", "2025-07-01", "2025-10-01", "2025-10-07", "2025-10-29", "2025-12-25", "2025-12-26"
+            {date: "2025-01-01", name: "元旦"},
+            {date: "2025-01-29", name: "年初一"},
+            {date: "2025-12-25", name: "聖誕節"}
         ];
         
         let localData = {
             records: [],
-            settings: { baseSat: "2025-09-13", joinDate: "2024-09-01", holidays: PRESET_HOLIDAYS, alBalance: 14, dailyHours: 8 }
+            settings: { 
+                workMode: "alt_sat", // 'mon_fri' or 'alt_sat'
+                baseSat: "2025-09-13", 
+                joinDate: "2024-09-01", 
+                holidays: PRESET_HOLIDAYS, 
+                alBalance: 14, 
+                dailyHours: 8 
+            }
         };
 
         let selectedDate = new Date();
         let curType = 'OT';
         let editId = null;
 
+        // Firebase Sync
         onSnapshot(docRef, (docSnap) => {
             const loading = document.getElementById('loadingMask');
             if (docSnap.exists()) {
-                localData = docSnap.data();
+                const data = docSnap.data();
+                // Migration check: if old format (array of strings) convert to objects
+                if(data.settings.holidays.length > 0 && typeof data.settings.holidays[0] === 'string') {
+                    data.settings.holidays = data.settings.holidays.map(d => ({date: d, name: '法定假期'}));
+                }
+                if(!data.settings.workMode) data.settings.workMode = 'alt_sat';
+                
+                localData = data;
                 refreshApp();
             } else {
                 setDoc(docRef, localData);
@@ -244,22 +352,108 @@
             openSettings: () => {
                 document.getElementById('setModal').classList.add('open');
                 const s = localData.settings;
+                // Work Mode
+                if(s.workMode === 'mon_fri') window.app.setWorkMode('mon_fri');
+                else window.app.setWorkMode('alt_sat');
+                
                 document.getElementById('setBaseSat').value = s.baseSat;
                 document.getElementById('setJoinDate').value = s.joinDate;
-                document.getElementById('setHolidays').value = s.holidays.join(', ');
                 document.getElementById('setAL').value = s.alBalance;
                 document.getElementById('setDaily').value = s.dailyHours;
+                renderHolidayList();
+            },
+            setWorkMode: (mode) => {
+                localData.settings.workMode = mode;
+                document.getElementById('modeMonFri').className = `toggle-opt ${mode==='mon_fri'?'active':''}`;
+                document.getElementById('modeAltSat').className = `toggle-opt ${mode==='alt_sat'?'active':''}`;
+                document.getElementById('satSetting').style.display = mode==='alt_sat' ? 'block' : 'none';
             },
             saveSettings: async () => {
                 const s = localData.settings;
+                // Note: workMode is set directly by toggle
                 s.baseSat = document.getElementById('setBaseSat').value;
                 s.joinDate = document.getElementById('setJoinDate').value;
                 s.alBalance = Number(document.getElementById('setAL').value);
                 s.dailyHours = Number(document.getElementById('setDaily').value);
-                s.holidays = document.getElementById('setHolidays').value.split(',').map(x=>x.trim()).filter(x=>x);
                 await pushToCloud();
                 document.getElementById('setModal').classList.remove('open');
             },
+            
+            // CSV Imports
+            importHolidays: (input) => {
+                const file = input.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const lines = e.target.result.split('\n');
+                    let count = 0;
+                    lines.forEach(line => {
+                        const parts = line.split(',');
+                        if(parts.length >= 2) {
+                            const d = parts[0].trim();
+                            const n = parts[1].trim();
+                            // Validate Date format YYYY-MM-DD
+                            if(/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+                                // check duplicates
+                                if(!localData.settings.holidays.some(h => h.date === d)) {
+                                    localData.settings.holidays.push({date: d, name: n});
+                                    count++;
+                                }
+                            }
+                        }
+                    });
+                    renderHolidayList();
+                    alert(`成功匯入 ${count} 個假期`);
+                };
+                reader.readAsText(file);
+                input.value = ''; // reset
+            },
+            importRecords: (input) => {
+                const file = input.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const lines = e.target.result.split('\n');
+                    let count = 0;
+                    lines.forEach(line => {
+                        // format: Date,Type,Val,Note
+                        const parts = line.split(',');
+                        if(parts.length >= 3) {
+                            const d = parts[0].trim();
+                            const type = parts[1].trim(); // OT or Leave
+                            const val = parts[2].trim();
+                            const note = parts[3] ? parts[3].trim() : '';
+                            
+                            if(/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+                                localData.records.push({
+                                    id: Date.now() + Math.random(),
+                                    date: d,
+                                    type: type,
+                                    subType: type === 'Leave' ? 'AL' : null, // Default to AL for simplicity
+                                    val: val,
+                                    note: note
+                                });
+                                count++;
+                            }
+                        }
+                    });
+                    await pushToCloud();
+                    alert(`成功匯入 ${count} 筆紀錄`);
+                };
+                reader.readAsText(file);
+                input.value = '';
+            },
+            clearHolidays: () => {
+                if(confirm("確定清空所有假期？")) {
+                    localData.settings.holidays = [];
+                    renderHolidayList();
+                }
+            },
+            deleteHoliday: (date) => {
+                localData.settings.holidays = localData.settings.holidays.filter(h => h.date !== date);
+                renderHolidayList();
+            },
+
             triggerAdd: () => openModal(),
             closeModal: () => document.getElementById('recModal').classList.remove('open'),
             switchTab: (t) => {
@@ -275,23 +469,57 @@
             selectDate: (d) => selectDate(d)
         };
 
+        // Helpers
+        function renderHolidayList() {
+            const list = document.getElementById('holidayListDisplay');
+            // sort by date
+            const sorted = [...localData.settings.holidays].sort((a,b) => a.date.localeCompare(b.date));
+            if(sorted.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#ccc; font-size:0.8rem">無假期資料</div>';
+                return;
+            }
+            list.innerHTML = sorted.map(h => `
+                <div class="holiday-item">
+                    <span><span class="holiday-date">${h.date}</span> <span class="holiday-name">${h.name}</span></span>
+                    <i class="fa-solid fa-trash" style="color:#ef4444; cursor:pointer;" onclick="window.app.deleteHoliday('${h.date}')"></i>
+                </div>
+            `).join('');
+        }
+
         async function pushToCloud() { try { await setDoc(docRef, localData); } catch(e) { console.error(e); } }
 
         function getDayStatus(d) {
             const dStr = d.toISOString().split('T')[0];
             const s = localData.settings;
-            if (s.holidays.includes(dStr)) return { type: 'HOLIDAY', name: '法定假期', isOff: true };
+            
+            // 1. Holiday (Using object structure now)
+            const holiday = s.holidays.find(h => h.date === dStr);
+            if (holiday) return { type: 'HOLIDAY', name: holiday.name, isOff: true };
+            
+            // 2. Sunday
             if (d.getDay() === 0) return { type: 'OFF', name: '週日', isOff: true };
+            
+            // 3. Saturday
             if (d.getDay() === 6) {
+                // Check Work Mode
+                if (s.workMode === 'mon_fri') {
+                    return { type: 'OFF', name: '週六 (休)', isOff: true };
+                }
+
+                // Alt Sat Logic
                 if(!s.baseSat) return { type: 'OFF', name: '週六', isOff: true };
                 const base = new Date(s.baseSat);
                 const target = new Date(dStr);
                 if(target < base) return { type: 'OFF', name: '週六', isOff: true };
+                
                 let workCount = 0;
                 let curr = new Date(base);
+                // Simple logic: check weeks between, minus holiday saturdays? 
+                // Using the prompt's logic: count valid work saturdays
                 while(curr <= target) {
                     const cStr = curr.toISOString().split('T')[0];
-                    if(!s.holidays.includes(cStr)) {
+                    const isHol = s.holidays.some(h => h.date === cStr);
+                    if(!isHol) {
                         if(cStr === dStr) break;
                         workCount++;
                     }
@@ -308,6 +536,16 @@
             document.getElementById('dateTitleLabel').innerText = `${dStr} · ${status.name}`;
             const recs = localData.records.filter(r => r.date === dStr);
             const container = document.getElementById('dayRecords');
+            
+            let statusBadge = '';
+            if(status.isOff) {
+                if(status.type === 'HOLIDAY') statusBadge = `<span style="background:var(--tag-holiday); color:var(--tag-holiday-text); padding:4px 8px; border-radius:8px; font-size:0.75rem;">${status.name}</span>`;
+                else statusBadge = `<span style="background:var(--tag-off); color:var(--tag-off-text); padding:4px 8px; border-radius:8px; font-size:0.75rem;">休假</span>`;
+            } else {
+                statusBadge = `<span style="background:#fff7ed; color:#c2410c; padding:4px 8px; border-radius:8px; font-size:0.75rem;">上班</span>`;
+            }
+            document.getElementById('dateTitleLabel').innerHTML = `${dStr} ${statusBadge}`;
+
             if(recs.length === 0) {
                 container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub); background:rgba(0,0,0,0.02); border-radius:18px;"><i class="fa-regular fa-calendar-xmark" style="font-size:1.5rem; opacity:0.5; margin-bottom:10px;"></i><div style="font-size:0.9rem">本日無紀錄</div></div>`;
             } else {
@@ -387,12 +625,12 @@
             curType = t; document.getElementById('recType').value = t;
             const btnOT = document.getElementById('btnTypeOT'); const btnLeave = document.getElementById('btnTypeLeave');
             if(t==='OT') {
-                btnOT.style.background = 'var(--surface)'; btnOT.style.color = 'var(--primary-dark)'; btnOT.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                btnLeave.style.background = 'transparent'; btnLeave.style.color = 'var(--text-sub)'; btnLeave.style.boxShadow = 'none';
+                btnOT.style.background = 'white'; btnOT.style.color = 'var(--primary-dark)';
+                btnLeave.style.background = 'transparent'; btnLeave.style.color = 'var(--text-sub)';
                 document.getElementById('secOT').style.display = 'block'; document.getElementById('secLeave').style.display = 'none';
             } else {
-                btnLeave.style.background = 'var(--surface)'; btnLeave.style.color = 'var(--primary-dark)'; btnLeave.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
-                btnOT.style.background = 'transparent'; btnOT.style.color = 'var(--text-sub)'; btnOT.style.boxShadow = 'none';
+                btnLeave.style.background = 'white'; btnLeave.style.color = 'var(--primary-dark)';
+                btnOT.style.background = 'transparent'; btnOT.style.color = 'var(--text-sub)';
                 document.getElementById('secOT').style.display = 'none'; document.getElementById('secLeave').style.display = 'block';
             }
         }
