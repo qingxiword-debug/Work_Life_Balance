@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work-Life Balance v2.2</title>
+    <title>Work-Life Balance v2.3</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -23,7 +23,6 @@
         .status-dot { width:8px; height:8px; border-radius:50%; background:#ccc; transition:0.3s; }
         .status-dot.online { background:#22c55e; box-shadow:0 0 5px #22c55e; }
         .status-dot.offline { background:#ef4444; }
-
         .btn-icon { background: none; border: none; font-size: 1.2rem; color: var(--primary); cursor: pointer; padding: 8px; }
 
         /* Scroller */
@@ -45,7 +44,6 @@
         .stat-big { font-size: 2.4rem; font-weight: 700; line-height: 1; margin: 5px 0; }
         .stat-lbl { font-size: 0.8rem; opacity: 0.9; font-weight: 500;}
 
-        /* Lists */
         .log-item { display: flex; align-items: center; padding: 14px; background: var(--surface); border-radius: 16px; margin-bottom: 10px; border: 1px solid var(--line); }
         .log-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 1rem; }
         .icon-ot { background: var(--tag-ot); color: var(--tag-ot-text); }
@@ -55,13 +53,11 @@
         .log-date { font-size: 0.75rem; color: var(--text-sub); margin-top: 2px; }
         .log-val { font-weight: 700; color: var(--primary-dark); font-size: 1rem;}
 
-        /* Settings UI */
         .import-box { border: 2px dashed #d4c5b9; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; background: #faf9f7; cursor: pointer; transition: 0.2s; }
         .import-box p { margin: 0; font-size: 0.85rem; color: var(--text-main); font-weight: 600; }
         .import-box span { font-size: 0.75rem; color: var(--text-sub); }
         .holiday-list { max-height: 150px; overflow-y: auto; background: #faf9f7; border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--line); }
         .holiday-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .holiday-date { color: var(--text-sub); font-size: 0.8rem; margin-right: 10px; }
         .toggle-group { display:flex; gap:10px; margin-bottom:10px; }
         .toggle-opt { flex:1; padding:12px; border:2px solid var(--line); border-radius:12px; background:#fff; color:var(--text-sub); font-size:0.9rem; font-weight:600; text-align:center; cursor:pointer; }
         .toggle-opt.active { border-color:var(--primary); color:var(--primary-dark); background:#fdfbf9; }
@@ -72,6 +68,11 @@
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background: var(--primary-dark); color: white; box-shadow: 0 4px 12px rgba(94, 80, 70, 0.2); }
         .btn-outline { background: transparent; border: 2px solid #ef4444; color: #ef4444; margin-top: 10px; }
+        
+        /* Std Hour Selector */
+        .std-hours-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .std-btn { flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--text-sub); cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        .std-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(74, 64, 58, 0.5); backdrop-filter: blur(4px); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; display: flex; align-items: flex-end; }
         .modal-overlay.open { opacity: 1; pointer-events: auto; }
@@ -92,11 +93,11 @@
 
     <div id="loadingMask">
         <i class="fa-solid fa-cloud fa-bounce" style="font-size:3rem"></i>
-        <span>正在連線雲端資料庫...</span>
+        <span>連線中...</span>
     </div>
 
     <header>
-        <h1>WLB <span class="ver-tag">v2.2</span> <div class="status-dot" id="statusDot"></div></h1>
+        <h1>WLB <span class="ver-tag">v2.3</span> <div class="status-dot" id="statusDot"></div></h1>
         <button class="btn-icon" onclick="window.app.openSettings()"><i class="fa-solid fa-sliders"></i></button>
     </header>
 
@@ -161,12 +162,12 @@
             
             <input type="file" id="fileHoliday" accept=".csv" style="display:none" onchange="window.app.importHolidays(this)">
             <div class="import-box" onclick="document.getElementById('fileHoliday').click()">
-                <i class="fa-solid fa-file-csv"></i><p>匯入假期 Excel (.csv)</p><span>格式: YYYY-MM-DD, 節日名稱</span>
+                <i class="fa-solid fa-file-csv"></i><p>匯入假期 Excel (.csv)</p><span>支援格式: 2025/01/01, 節日</span>
             </div>
 
             <input type="file" id="fileRecord" accept=".csv" style="display:none" onchange="window.app.importRecords(this)">
             <div class="import-box" onclick="document.getElementById('fileRecord').click()">
-                <i class="fa-solid fa-table"></i><p>匯入歷史紀錄 Excel (.csv)</p><span>格式: 日期, 類型, 數值, 備註</span>
+                <i class="fa-solid fa-table"></i><p>匯入歷史紀錄 Excel (.csv)</p><span>格式: 日期, 類型, 數值</span>
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
@@ -191,14 +192,24 @@
                     <button type="button" id="btnTypeOT" class="btn" style="margin:0; background:white; color:var(--primary-dark); box-shadow:0 2px 8px rgba(0,0,0,0.05);" onclick="window.app.setType('OT')">加班 OT</button>
                     <button type="button" id="btnTypeLeave" class="btn" style="margin:0; background:transparent; color:var(--text-sub); box-shadow:none;" onclick="window.app.setType('Leave')">請假</button>
                 </div>
+                
                 <div id="secOT">
+                    <label class="form-label">當日扣除工時 (小時)</label>
+                    <div class="std-hours-group">
+                        <button type="button" class="std-btn active" id="btnStd9" onclick="window.app.setStdHours(9)">9h</button>
+                        <button type="button" class="std-btn" id="btnStd8" onclick="window.app.setStdHours(8)">8h</button>
+                        <button type="button" class="std-btn" id="btnStd0" onclick="window.app.setStdHours(0)">0h (假日)</button>
+                    </div>
+                    <input type="number" id="inpStdVal" value="9" style="display:none;"> 
+
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <div><label class="form-label">上班</label><input type="time" class="form-input" id="inpIn" onchange="window.app.calcOT()"></div>
                         <div><label class="form-label">下班</label><input type="time" class="form-input" id="inpOut" onchange="window.app.calcOT()"></div>
                     </div>
                     <div id="otMsg" style="text-align:right; font-size:0.8rem; color:var(--primary); margin-top:8px; height:1.2em;"></div>
-                    <label class="form-label">OT 時數</label><input type="number" step="0.1" class="form-input" id="inpHours" placeholder="自動計算">
+                    <label class="form-label">OT 時數 (自動計算)</label><input type="number" step="0.1" class="form-input" id="inpHours" placeholder="結果">
                 </div>
+
                 <div id="secLeave" style="display:none;">
                     <label class="form-label">假別</label>
                     <select class="form-input" id="inpLeaveType"><option value="SL">病假 (SL)</option><option value="AL">年假 (AL)</option></select>
@@ -215,7 +226,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Firebase Config (Already Filled from your screenshot)
+        // Your Key
         const firebaseConfig = {
             apiKey: "AIzaSyAi_iDY4JeppmveW5-Uq2cMRWJY9jeT9Dw",
             authDomain: "work-life-balance-9f09b.firebaseapp.com",
@@ -241,24 +252,19 @@
         let curType = 'OT';
         let editId = null;
 
-        // Firebase Sync Listener
         onSnapshot(docRef, (docSnap) => {
             const loading = document.getElementById('loadingMask');
             const dot = document.getElementById('statusDot');
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 if(!data.settings.workMode) data.settings.workMode = 'alt_sat';
-                // Fix old holiday format if exists
                 if(data.settings.holidays.length && typeof data.settings.holidays[0] === 'string') {
                     data.settings.holidays = data.settings.holidays.map(d => ({date: d, name: '假期'}));
                 }
                 localData = data;
                 dot.className = 'status-dot online';
                 refreshApp();
-            } else {
-                setDoc(docRef, localData);
-                dot.className = 'status-dot online';
-            }
+            } else { setDoc(docRef, localData); dot.className = 'status-dot online'; }
             if(loading) { loading.style.opacity = '0'; setTimeout(()=>loading.style.display='none', 500); }
         }, (err) => {
             document.getElementById('statusDot').className = 'status-dot offline';
@@ -298,17 +304,19 @@
                 } catch(e) { alert("❌ 錯誤：" + e.message); }
                 finally { btn.innerText = originalText; btn.disabled = false; }
             },
-            // Imports
+            // Improved CSV Import
             importHolidays: (input) => {
                 const file = input.files[0]; if(!file) return;
                 const r = new FileReader();
                 r.onload = (e) => {
-                    const lines = e.target.result.split('\n');
+                    const lines = e.target.result.split(/\r\n|\n/); // Handle all line breaks
                     let count = 0;
-                    lines.forEach(l => {
+                    lines.forEach((l, idx) => {
+                        if(idx === 0 && l.toLowerCase().includes('date')) return; // Skip header
                         const parts = l.split(',');
                         if(parts.length >= 2) {
-                            const d = parts[0].trim(); const n = parts[1].trim();
+                            let d = parts[0].trim().replace(/\//g, '-'); // Allow 2025/01/01
+                            const n = parts[1].trim();
                             if(/^\d{4}-\d{2}-\d{2}$/.test(d)) {
                                 if(!localData.settings.holidays.some(h=>h.date===d)) {
                                     localData.settings.holidays.push({date: d, name: n}); count++;
@@ -323,12 +331,15 @@
                 const file = input.files[0]; if(!file) return;
                 const r = new FileReader();
                 r.onload = async (e) => {
-                    const lines = e.target.result.split('\n');
+                    const lines = e.target.result.split(/\r\n|\n/);
                     let count = 0;
-                    lines.forEach(l => {
+                    lines.forEach((l, idx) => {
+                        if(idx === 0 && l.toLowerCase().includes('date')) return; // Skip header
                         const parts = l.split(',');
                         if(parts.length >= 3) {
-                            const d = parts[0].trim(); const t = parts[1].trim(); const v = parts[2].trim();
+                            let d = parts[0].trim().replace(/\//g, '-');
+                            const t = parts[1].trim(); 
+                            const v = parts[2].trim();
                             if(/^\d{4}-\d{2}-\d{2}$/.test(d)) {
                                 localData.records.push({
                                     id: Date.now()+Math.random(), date: d, type: t,
@@ -352,7 +363,15 @@
                 document.getElementById(`tab-${t}`).classList.add('active');
                 document.getElementById(`nav-${t}`).classList.add('active');
             },
-            setType: (t) => setType(t), calcOT: () => calcOT(), saveRecord: (e) => saveRecord(e), delRecord: (b) => delRecord(b), selectDate: (d) => selectDate(d)
+            setType: (t) => setType(t), 
+            setStdHours: (h) => {
+                document.getElementById('inpStdVal').value = h;
+                document.querySelectorAll('.std-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('btnStd'+h).classList.add('active');
+                window.app.calcOT();
+            },
+            calcOT: () => calcOT(), 
+            saveRecord: (e) => saveRecord(e), delRecord: (b) => delRecord(b), selectDate: (d) => selectDate(d)
         };
 
         function renderHolidayList() {
@@ -371,12 +390,11 @@
             if(d.getDay()===0) return { type: 'OFF', name: '週日', isOff: true };
             if(d.getDay()===6) {
                 if(s.workMode==='mon_fri') return { type: 'OFF', name: '週六(休)', isOff: true };
-                if(!s.baseSat) return { type: 'OFF', name: '週六', isOff: true }; // Safe fallback
+                if(!s.baseSat) return { type: 'OFF', name: '週六', isOff: true }; 
                 const base = new Date(s.baseSat); const target = new Date(dStr);
                 if(target < base) return { type: 'OFF', name: '週六', isOff: true };
                 
                 let cnt = 0, curr = new Date(base);
-                // Simple week loop to prevent infinite loop crash
                 while(curr <= target) {
                     const cStr = curr.toISOString().split('T')[0];
                     if(!s.holidays.some(h=>h.date===cStr)) { if(cStr===dStr) break; cnt++; }
@@ -393,7 +411,7 @@
             const badge = status.isOff ? (status.type==='HOLIDAY' ? `<span style="background:#fff1f2;color:#e11d48;padding:2px 6px;border-radius:6px;font-size:0.7rem">${status.name}</span>` : `<span style="background:#e6f0e6;color:#5d7a5f;padding:2px 6px;border-radius:6px;font-size:0.7rem">休假</span>`) : `<span style="background:#fff7ed;color:#c2410c;padding:2px 6px;border-radius:6px;font-size:0.7rem">上班</span>`;
             document.getElementById('dateTitleLabel').innerHTML = `${dStr} ${badge}`;
             const recs = localData.records.filter(r => r.date === dStr);
-            document.getElementById('dayRecords').innerHTML = recs.length ? recs.map(renderItem).join('') : `<div style="text-align:center;padding:30px;color:#ccc;background:#faf9f7;border-radius:16px;border:1px solid #eee"><div style="font-size:0.9rem">本日無紀錄</div></div>`;
+            document.getElementById('dayRecords').innerHTML = recs.length ? recs.map(renderItem).join('') : `<div style="text-align:center;padding:30px;color:#ccc;background:#faf9f7;border-radius:16px;border:1px solid #eee"><div style="font-size:0.9rem">無紀錄</div></div>`;
             updateStats(); renderAllLogs(); generateScroller();
         }
 
@@ -409,7 +427,6 @@
 
         function updateStats() {
             const s = localData.settings;
-            // Handle potentially missing dates safely
             const joinD = s.joinDate ? new Date(s.joinDate) : new Date(); 
             const now = new Date();
             let months = (now.getFullYear() - joinD.getFullYear()) * 12 + (now.getMonth() - joinD.getMonth());
@@ -441,20 +458,47 @@
         
         function openModal(r = null) {
             document.getElementById('recModal').classList.add('open');
-            if(r) { editId=r.id; document.getElementById('inpNote').value=r.note||''; setType(r.type); if(r.type==='OT')document.getElementById('inpHours').value=r.val; else{document.getElementById('inpLeaveType').value=r.subType; document.getElementById('inpDays').value=r.val;} document.getElementById('btnDel').style.display='block'; }
-            else { editId=null; document.getElementById('recForm').reset(); setType('OT'); document.getElementById('btnDel').style.display='none'; }
+            const dStr = selectedDate.toISOString().split('T')[0];
+            const status = getDayStatus(selectedDate);
+            
+            // Auto-set Std Hours based on day type
+            let defaultStd = status.isOff ? 0 : 9;
+            window.app.setStdHours(defaultStd);
+
+            if(r) { 
+                editId=r.id; 
+                document.getElementById('inpNote').value=r.note||''; 
+                setType(r.type); 
+                if(r.type==='OT') document.getElementById('inpHours').value=r.val; 
+                else{ document.getElementById('inpLeaveType').value=r.subType; document.getElementById('inpDays').value=r.val; } 
+                document.getElementById('btnDel').style.display='block'; 
+            } else { 
+                editId=null; 
+                document.getElementById('recForm').reset(); 
+                setType('OT'); 
+                document.getElementById('btnDel').style.display='none';
+                window.app.setStdHours(defaultStd); // ensure reset
+            }
         }
+        
         function setType(t) { curType = t; document.getElementById('recType').value = t; document.getElementById('secOT').style.display = t==='OT'?'block':'none'; document.getElementById('secLeave').style.display = t==='Leave'?'block':'none'; }
         
         function calcOT() {
-            const i=document.getElementById('inpIn').value, o=document.getElementById('inpOut').value; if(!i||!o)return;
-            const mi = i.split(':').reduce((h,m)=>h*60+Number(m),0), mo = o.split(':').reduce((h,m)=>h*60+Number(m),0);
-            const st = getDayStatus(selectedDate);
-            if(st.isOff) { document.getElementById('inpHours').value = ((mo-mi)/60).toFixed(1); }
-            else { 
-                const s=9*60, e=st.type==='WORK'?13*60:18*60; 
-                document.getElementById('inpHours').value = ((Math.max(0,s-mi) + Math.max(0,mo-e))/60).toFixed(1); 
-            }
+            const i=document.getElementById('inpIn').value;
+            const o=document.getElementById('inpOut').value;
+            if(!i||!o) return;
+            
+            const mi = i.split(':').reduce((h,m)=>h*60+Number(m),0);
+            const mo = o.split(':').reduce((h,m)=>h*60+Number(m),0);
+            const stdHours = Number(document.getElementById('inpStdVal').value);
+            
+            let durationMins = mo - mi;
+            if(durationMins < 0) durationMins += 24*60; // handle cross midnight (simple)
+
+            const otMins = Math.max(0, durationMins - (stdHours * 60));
+            
+            document.getElementById('inpHours').value = (otMins / 60).toFixed(1);
+            document.getElementById('otMsg').innerText = `總工時 ${(durationMins/60).toFixed(1)}h - 扣除 ${stdHours}h`;
         }
         
         async function saveRecord(e) {
@@ -468,8 +512,7 @@
                 const rec = { id: editId||Date.now(), date: selectedDate.toISOString().split('T')[0], type: curType, subType: curType==='Leave'?document.getElementById('inpLeaveType').value:null, val: val, note: document.getElementById('inpNote').value };
                 if(editId) localData.records = localData.records.filter(r=>r.id!==editId);
                 localData.records.push(rec); await pushToCloud(); 
-                alert("✅ 儲存成功！");
-                window.app.closeModal();
+                alert("✅ 儲存成功！"); window.app.closeModal();
             } catch(err) { alert("❌ 錯誤：" + err.message); }
             finally { btn.innerText = originalText; btn.disabled = false; }
         }
