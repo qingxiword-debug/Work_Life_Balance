@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work-Life Balance v2.3</title>
+    <title>Work-Life Balance v2.4</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -23,13 +23,20 @@
         .status-dot { width:8px; height:8px; border-radius:50%; background:#ccc; transition:0.3s; }
         .status-dot.online { background:#22c55e; box-shadow:0 0 5px #22c55e; }
         .status-dot.offline { background:#ef4444; }
-        .btn-icon { background: none; border: none; font-size: 1.2rem; color: var(--primary); cursor: pointer; padding: 8px; }
+
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .btn-icon { background: none; border: none; font-size: 1.2rem; color: var(--primary); cursor: pointer; padding: 5px; position: relative; }
+        
+        /* Date Picker Hack */
+        #dateJumper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
         /* Scroller */
         .date-scroller-wrap { padding: 5px 0 15px 0; background: var(--bg-body); }
         .date-scroller { display: flex; overflow-x: auto; gap: 8px; padding: 0 24px; scrollbar-width: none; }
         .date-scroller::-webkit-scrollbar { display: none; }
         .date-chip { min-width: 52px; height: 68px; background: var(--surface); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); flex-shrink: 0; cursor: pointer; transition: 0.2s; border: 1px solid var(--line); position: relative; }
+        .date-chip span:first-child { font-size: 0.7rem; margin-bottom: 2px; }
+        .date-chip span:last-child { font-size: 1.1rem; font-weight: 700; }
         .date-chip.active { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(140, 123, 112, 0.3); }
         .date-chip.is-holiday { border-color: #fca5a5; background: #fff1f2; color: #e11d48; }
         .date-chip.active.is-holiday { background: var(--primary); border-color: transparent; color: white; }
@@ -44,6 +51,7 @@
         .stat-big { font-size: 2.4rem; font-weight: 700; line-height: 1; margin: 5px 0; }
         .stat-lbl { font-size: 0.8rem; opacity: 0.9; font-weight: 500;}
 
+        /* Lists */
         .log-item { display: flex; align-items: center; padding: 14px; background: var(--surface); border-radius: 16px; margin-bottom: 10px; border: 1px solid var(--line); }
         .log-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 1rem; }
         .icon-ot { background: var(--tag-ot); color: var(--tag-ot-text); }
@@ -53,11 +61,13 @@
         .log-date { font-size: 0.75rem; color: var(--text-sub); margin-top: 2px; }
         .log-val { font-weight: 700; color: var(--primary-dark); font-size: 1rem;}
 
+        /* Settings UI */
         .import-box { border: 2px dashed #d4c5b9; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; background: #faf9f7; cursor: pointer; transition: 0.2s; }
         .import-box p { margin: 0; font-size: 0.85rem; color: var(--text-main); font-weight: 600; }
         .import-box span { font-size: 0.75rem; color: var(--text-sub); }
         .holiday-list { max-height: 150px; overflow-y: auto; background: #faf9f7; border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--line); }
         .holiday-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .holiday-date { color: var(--text-sub); font-size: 0.8rem; margin-right: 10px; }
         .toggle-group { display:flex; gap:10px; margin-bottom:10px; }
         .toggle-opt { flex:1; padding:12px; border:2px solid var(--line); border-radius:12px; background:#fff; color:var(--text-sub); font-size:0.9rem; font-weight:600; text-align:center; cursor:pointer; }
         .toggle-opt.active { border-color:var(--primary); color:var(--primary-dark); background:#fdfbf9; }
@@ -93,12 +103,18 @@
 
     <div id="loadingMask">
         <i class="fa-solid fa-cloud fa-bounce" style="font-size:3rem"></i>
-        <span>連線中...</span>
+        <span>正在連線...</span>
     </div>
 
     <header>
-        <h1>WLB <span class="ver-tag">v2.3</span> <div class="status-dot" id="statusDot"></div></h1>
-        <button class="btn-icon" onclick="window.app.openSettings()"><i class="fa-solid fa-sliders"></i></button>
+        <h1>WLB <span class="ver-tag">v2.4</span> <div class="status-dot" id="statusDot"></div></h1>
+        <div class="header-actions">
+            <button class="btn-icon">
+                <i class="fa-solid fa-calendar-days"></i>
+                <input type="month" id="dateJumper" onchange="window.app.jumpToDate(this.value)">
+            </button>
+            <button class="btn-icon" onclick="window.app.openSettings()"><i class="fa-solid fa-sliders"></i></button>
+        </div>
     </header>
 
     <div class="date-scroller-wrap">
@@ -162,12 +178,12 @@
             
             <input type="file" id="fileHoliday" accept=".csv" style="display:none" onchange="window.app.importHolidays(this)">
             <div class="import-box" onclick="document.getElementById('fileHoliday').click()">
-                <i class="fa-solid fa-file-csv"></i><p>匯入假期 Excel (.csv)</p><span>支援格式: 2025/01/01, 節日</span>
+                <i class="fa-solid fa-file-csv"></i><p>匯入假期 Excel (.csv)</p><span>格式: YYYY-MM-DD, 節日名稱</span>
             </div>
 
             <input type="file" id="fileRecord" accept=".csv" style="display:none" onchange="window.app.importRecords(this)">
             <div class="import-box" onclick="document.getElementById('fileRecord').click()">
-                <i class="fa-solid fa-table"></i><p>匯入歷史紀錄 Excel (.csv)</p><span>格式: 日期, 類型, 數值</span>
+                <i class="fa-solid fa-table"></i><p>匯入歷史紀錄 Excel (.csv)</p><span>格式: 日期, 類型, 數值, 備註</span>
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
@@ -226,7 +242,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Your Key
         const firebaseConfig = {
             apiKey: "AIzaSyAi_iDY4JeppmveW5-Uq2cMRWJY9jeT9Dw",
             authDomain: "work-life-balance-9f09b.firebaseapp.com",
@@ -249,6 +264,8 @@
             }
         };
         let selectedDate = new Date();
+        // Use a separate view date so we can jump around while keeping today selected initially
+        let currentViewDate = new Date(); 
         let curType = 'OT';
         let editId = null;
 
@@ -309,13 +326,13 @@
                 const file = input.files[0]; if(!file) return;
                 const r = new FileReader();
                 r.onload = (e) => {
-                    const lines = e.target.result.split(/\r\n|\n/); // Handle all line breaks
+                    const lines = e.target.result.split(/\r\n|\n/);
                     let count = 0;
                     lines.forEach((l, idx) => {
-                        if(idx === 0 && l.toLowerCase().includes('date')) return; // Skip header
+                        if(idx === 0 && l.toLowerCase().includes('date')) return;
                         const parts = l.split(',');
                         if(parts.length >= 2) {
-                            let d = parts[0].trim().replace(/\//g, '-'); // Allow 2025/01/01
+                            let d = parts[0].trim().replace(/\//g, '-');
                             const n = parts[1].trim();
                             if(/^\d{4}-\d{2}-\d{2}$/.test(d)) {
                                 if(!localData.settings.holidays.some(h=>h.date===d)) {
@@ -334,7 +351,7 @@
                     const lines = e.target.result.split(/\r\n|\n/);
                     let count = 0;
                     lines.forEach((l, idx) => {
-                        if(idx === 0 && l.toLowerCase().includes('date')) return; // Skip header
+                        if(idx === 0 && l.toLowerCase().includes('date')) return;
                         const parts = l.split(',');
                         if(parts.length >= 3) {
                             let d = parts[0].trim().replace(/\//g, '-');
@@ -371,7 +388,19 @@
                 window.app.calcOT();
             },
             calcOT: () => calcOT(), 
-            saveRecord: (e) => saveRecord(e), delRecord: (b) => delRecord(b), selectDate: (d) => selectDate(d)
+            saveRecord: (e) => saveRecord(e), delRecord: (b) => delRecord(b), selectDate: (d) => selectDate(d),
+            
+            // Date Jump Function
+            jumpToDate: (val) => {
+                if(!val) return;
+                // val is YYYY-MM
+                const [y, m] = val.split('-');
+                // Set currentViewDate to the 15th of that month to ensure the month is centered
+                currentViewDate = new Date(y, m - 1, 15);
+                generateScroller();
+                // Select the 1st of that month
+                window.app.selectDate(new Date(y, m - 1, 1));
+            }
         };
 
         function renderHolidayList() {
@@ -438,9 +467,13 @@
             document.getElementById('dispOTDays').innerText = (ot/(s.dailyHours||8)).toFixed(1); document.getElementById('dispAL').innerText = al;
         }
 
+        // Updated Scroller to use currentViewDate
         function generateScroller() {
             const el = document.getElementById('dateScroller'); el.innerHTML = '';
-            const start = new Date(); start.setDate(start.getDate() - 15);
+            // Range: -15 days to +45 days relative to currentViewDate
+            const start = new Date(currentViewDate); 
+            start.setDate(start.getDate() - 15);
+            
             for(let i=0; i<60; i++) {
                 const d = new Date(start); d.setDate(start.getDate() + i);
                 const dStr = d.toISOString().split('T')[0];
@@ -453,6 +486,12 @@
                 chip.innerHTML = `<span>${['日','一','二','三','四','五','六'][d.getDay()]}</span><span>${d.getDate()}</span><div class="has-data-dot"></div>`;
                 el.appendChild(chip);
             }
+            
+            // Scroll to selected date if it's visible in this range
+            setTimeout(()=> {
+                const chip = Array.from(document.querySelectorAll('.date-chip')).find(el => el.innerHTML.includes(selectedDate.getDate()));
+                if(chip && selectedDate.getMonth() === currentViewDate.getMonth()) chip.scrollIntoView({inline:'center'});
+            }, 100);
         }
         function selectDate(d) { selectedDate = d; refreshApp(); }
         
@@ -512,7 +551,8 @@
                 const rec = { id: editId||Date.now(), date: selectedDate.toISOString().split('T')[0], type: curType, subType: curType==='Leave'?document.getElementById('inpLeaveType').value:null, val: val, note: document.getElementById('inpNote').value };
                 if(editId) localData.records = localData.records.filter(r=>r.id!==editId);
                 localData.records.push(rec); await pushToCloud(); 
-                alert("✅ 儲存成功！"); window.app.closeModal();
+                alert("✅ 儲存成功！"); 
+                window.app.closeModal();
             } catch(err) { alert("❌ 錯誤：" + err.message); }
             finally { btn.innerText = originalText; btn.disabled = false; }
         }
