@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work-Life Balance v2.5</title>
+    <title>Work-Life Balance v2.6</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -77,9 +77,9 @@
         .btn-primary { background: var(--primary-dark); color: white; box-shadow: 0 4px 12px rgba(94, 80, 70, 0.2); }
         .btn-outline { background: transparent; border: 2px solid #ef4444; color: #ef4444; margin-top: 10px; }
         
-        /* Std Hour Selector */
-        .std-hours-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        .std-btn { flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--text-sub); cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        /* Std Hour Selector - Updated for 4 buttons */
+        .std-hours-group { display: flex; gap: 8px; margin-bottom: 15px; }
+        .std-btn { flex: 1; padding: 10px 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--text-sub); cursor: pointer; font-size: 0.85rem; transition: 0.2s; text-align: center;}
         .std-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(74, 64, 58, 0.5); backdrop-filter: blur(4px); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; display: flex; align-items: flex-end; }
@@ -105,7 +105,7 @@
     </div>
 
     <header>
-        <h1>WLB <span class="ver-tag">v2.5</span> <div class="status-dot" id="statusDot"></div></h1>
+        <h1>WLB <span class="ver-tag">v2.6</span> <div class="status-dot" id="statusDot"></div></h1>
         <div class="header-actions">
             <button class="btn-icon">
                 <i class="fa-solid fa-calendar-days"></i>
@@ -214,8 +214,9 @@
                 <div id="secOT">
                     <label class="form-label">當日扣除工時 (小時)</label>
                     <div class="std-hours-group">
-                        <button type="button" class="std-btn active" id="btnStd9" onclick="window.app.setStdHours(9)">9h</button>
+                        <button type="button" class="std-btn active" id="btnStd9" onclick="window.app.setStdHours(9)">9h (平日)</button>
                         <button type="button" class="std-btn" id="btnStd8" onclick="window.app.setStdHours(8)">8h</button>
+                        <button type="button" class="std-btn" id="btnStd4" onclick="window.app.setStdHours(4)">4h (週六)</button>
                         <button type="button" class="std-btn" id="btnStd0" onclick="window.app.setStdHours(0)">0h (假日)</button>
                     </div>
                     <input type="number" id="inpStdVal" value="9" style="display:none;"> 
@@ -371,7 +372,6 @@
             clearHolidays: () => { if(confirm("確定清空？")) { localData.settings.holidays=[]; renderHolidayList(); } },
             deleteHoliday: (d) => { localData.settings.holidays = localData.settings.holidays.filter(h=>h.date!==d); renderHolidayList(); },
             
-            // UI
             triggerAdd: () => openModal(),
             closeModal: () => document.getElementById('recModal').classList.remove('open'),
             switchTab: (t) => {
@@ -397,13 +397,16 @@
                 generateScroller();
                 window.app.selectDate(new Date(y, m - 1, 1));
             },
-            // FIX: Handle date change in modal
             onModalDateChange: (val) => {
                 if(!val) return;
                 const d = new Date(val);
                 const status = getDayStatus(d);
-                // Auto set std hours based on new date status
-                const defaultStd = status.isOff ? 0 : 9;
+                
+                // Smart auto-select Logic
+                let defaultStd = 9; // Normal Day
+                if(status.isOff) defaultStd = 0; // Holiday/Sunday
+                else if(status.type === 'WORK_SAT') defaultStd = 4; // Shift Saturday
+                
                 window.app.setStdHours(defaultStd);
             }
         };
@@ -434,7 +437,7 @@
                     if(!s.holidays.some(h=>h.date===cStr)) { if(cStr===dStr) break; cnt++; }
                     curr.setDate(curr.getDate()+7);
                 }
-                return (cnt%2===0) ? { type: 'WORK', name: '長週上班', isOff: false } : { type: 'OFF', name: '短週休假', isOff: true };
+                return (cnt%2===0) ? { type: 'WORK_SAT', name: '長週上班', isOff: false } : { type: 'OFF_SAT', name: '短週休假', isOff: true };
             }
             return { type: 'WORK', name: '工作日', isOff: false };
         }
@@ -500,32 +503,28 @@
         function openModal(r = null) {
             document.getElementById('recModal').classList.add('open');
             const dStr = selectedDate.toISOString().split('T')[0];
-            const status = getDayStatus(selectedDate);
-            
-            // Set Date input
             document.getElementById('inpDate').value = dStr;
-
-            // Auto-set Std Hours
-            let defaultStd = status.isOff ? 0 : 9;
-            window.app.setStdHours(defaultStd);
+            window.app.onModalDateChange(dStr); // Trigger auto-select logic on open
 
             if(r) { 
                 editId=r.id; 
-                // Override date input with record date
                 document.getElementById('inpDate').value = r.date;
                 document.getElementById('inpNote').value=r.note||''; 
                 setType(r.type); 
                 if(r.type==='OT') document.getElementById('inpHours').value=r.val; 
                 else{ document.getElementById('inpLeaveType').value=r.subType; document.getElementById('inpDays').value=r.val; } 
                 document.getElementById('btnDel').style.display='block'; 
+                
+                // For existing records, we might want to guess standard hours or just leave it at 9?
+                // Re-triggering date change logic is safer to get defaults correct
+                window.app.onModalDateChange(r.date);
             } else { 
                 editId=null; 
                 document.getElementById('recForm').reset(); 
-                // Ensure date input is set again after reset
                 document.getElementById('inpDate').value = dStr;
                 setType('OT'); 
                 document.getElementById('btnDel').style.display='none';
-                window.app.setStdHours(defaultStd); 
+                window.app.onModalDateChange(dStr);
             }
         }
         
@@ -555,7 +554,6 @@
             const originalText = btn.innerText;
             btn.innerText = "⏳ 儲存中..."; btn.disabled = true;
             try {
-                // Read date from Input
                 const dateVal = document.getElementById('inpDate').value;
                 if(!dateVal) throw new Error("請選擇日期");
 
@@ -571,11 +569,10 @@
                 alert("✅ 儲存成功！"); 
                 window.app.closeModal();
                 
-                // Auto jump to the date of the record
                 const [y, m, d] = dateVal.split('-');
-                currentViewDate = new Date(y, m-1, 15); // sync view
+                currentViewDate = new Date(y, m-1, 15); 
                 generateScroller();
-                window.app.selectDate(new Date(y, m-1, d)); // select day
+                window.app.selectDate(new Date(y, m-1, d)); 
 
             } catch(err) { alert("❌ 錯誤：" + err.message); }
             finally { btn.innerText = originalText; btn.disabled = false; }
