@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work-Life Balance v2.6</title>
+    <title>Work-Life Balance v2.7</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -77,7 +77,7 @@
         .btn-primary { background: var(--primary-dark); color: white; box-shadow: 0 4px 12px rgba(94, 80, 70, 0.2); }
         .btn-outline { background: transparent; border: 2px solid #ef4444; color: #ef4444; margin-top: 10px; }
         
-        /* Std Hour Selector - Updated for 4 buttons */
+        /* Std Hour Selector */
         .std-hours-group { display: flex; gap: 8px; margin-bottom: 15px; }
         .std-btn { flex: 1; padding: 10px 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--text-sub); cursor: pointer; font-size: 0.85rem; transition: 0.2s; text-align: center;}
         .std-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
@@ -105,7 +105,7 @@
     </div>
 
     <header>
-        <h1>WLB <span class="ver-tag">v2.6</span> <div class="status-dot" id="statusDot"></div></h1>
+        <h1>WLB <span class="ver-tag">v2.7</span> <div class="status-dot" id="statusDot"></div></h1>
         <div class="header-actions">
             <button class="btn-icon">
                 <i class="fa-solid fa-calendar-days"></i>
@@ -259,11 +259,16 @@
         const db = getFirestore(app);
         const docRef = doc(db, "worklife_app", "personal_data_v2");
 
+        // *** 自動內建的完整假期資料 (2025-2026) ***
+        const PRESET_HOLIDAYS = [
+            {date:"2025-01-01",name:"元旦"},{date:"2025-01-29",name:"農曆年初一"},{date:"2025-01-30",name:"農曆年初二"},{date:"2025-01-31",name:"農曆年初三"},{date:"2025-04-04",name:"清明節"},{date:"2025-04-18",name:"耶穌受難節"},{date:"2025-04-19",name:"耶穌受難節翌日"},{date:"2025-04-21",name:"復活節星期一"},{date:"2025-05-01",name:"勞動節"},{date:"2025-05-05",name:"佛誕"},{date:"2025-05-31",name:"端午節"},{date:"2025-07-01",name:"香港特別行政區成立紀念日"},{date:"2025-10-01",name:"國慶日"},{date:"2025-10-07",name:"中秋節翌日"},{date:"2025-10-29",name:"重陽節"},{date:"2025-12-25",name:"聖誕節"},{date:"2025-12-26",name:"聖誕節後第一個周日"},{date:"2026-01-01",name:"元旦"},{date:"2026-02-17",name:"農曆年初一"},{date:"2026-02-18",name:"農曆年初二"},{date:"2026-02-19",name:"農曆年初三"},{date:"2026-04-03",name:"耶穌受難節"},{date:"2026-04-04",name:"耶穌受難節翌日"},{date:"2026-04-06",name:"清明節翌日"},{date:"2026-04-07",name:"復活節星期一翌日"},{date:"2026-05-01",name:"勞動節"},{date:"2026-05-25",name:"佛誕翌日"},{date:"2026-06-19",name:"端午節"},{date:"2026-07-01",name:"香港特別行政區成立紀念日"},{date:"2026-09-26",name:"中秋節翌日"},{date:"2026-10-01",name:"國慶日"},{date:"2026-10-19",name:"重陽節翌日"},{date:"2026-12-25",name:"聖誕節"},{date:"2026-12-26",name:"聖誕節後第一個周日"}
+        ];
+
         let localData = {
             records: [],
             settings: { 
                 workMode: "alt_sat", baseSat: "2025-09-13", joinDate: "2024-09-01", 
-                holidays: [{date: "2025-01-01", name: "元旦"}], alBalance: 14, dailyHours: 8 
+                holidays: PRESET_HOLIDAYS, alBalance: 14, dailyHours: 8 
             }
         };
         let selectedDate = new Date();
@@ -277,8 +282,10 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 if(!data.settings.workMode) data.settings.workMode = 'alt_sat';
+                // Data Migration: Ensure holidays is Array of Objects
                 if(data.settings.holidays.length && typeof data.settings.holidays[0] === 'string') {
-                    data.settings.holidays = data.settings.holidays.map(d => ({date: d, name: '假期'}));
+                    // Try to migrate old string dates to objects
+                    data.settings.holidays = PRESET_HOLIDAYS; // Overwrite with better preset if old format detected
                 }
                 localData = data;
                 dot.className = 'status-dot online';
@@ -323,15 +330,26 @@
                 } catch(e) { alert("❌ 錯誤：" + e.message); }
                 finally { btn.innerText = originalText; btn.disabled = false; }
             },
+            
+            // *** 修正後的 CSV 匯入邏輯 (過濾 BOM) ***
             importHolidays: (input) => {
                 const file = input.files[0]; if(!file) return;
                 const r = new FileReader();
                 r.onload = (e) => {
-                    const lines = e.target.result.split(/\r\n|\n/);
+                    // split by any line break type
+                    const lines = e.target.result.split(/\r\n|\n|\r/); 
                     let count = 0;
-                    lines.forEach((l, idx) => {
-                        if(idx === 0 && l.toLowerCase().includes('date')) return;
-                        const parts = l.split(',');
+                    lines.forEach((l) => {
+                        // Clean line content (remove BOM or weird chars)
+                        let cleanLine = l.trim();
+                        // Remove Byte Order Mark if present at start of first line
+                        if (cleanLine.charCodeAt(0) === 0xFEFF) {
+                            cleanLine = cleanLine.slice(1);
+                        }
+                        if(!cleanLine) return;
+
+                        // Allow comma or semicolon separator
+                        const parts = cleanLine.split(/,|;/); 
                         if(parts.length >= 2) {
                             let d = parts[0].trim().replace(/\//g, '-');
                             const n = parts[1].trim();
@@ -342,18 +360,24 @@
                             }
                         }
                     });
-                    renderHolidayList(); alert(`成功匯入 ${count} 個假期`); input.value='';
+                    renderHolidayList(); 
+                    if(count === 0) alert("匯入 0 筆。請檢查 CSV 格式是否為 YYYY-MM-DD,名稱");
+                    else alert(`成功匯入 ${count} 個假期`); 
+                    input.value='';
                 }; r.readAsText(file);
             },
             importRecords: (input) => {
                 const file = input.files[0]; if(!file) return;
                 const r = new FileReader();
                 r.onload = async (e) => {
-                    const lines = e.target.result.split(/\r\n|\n/);
+                    const lines = e.target.result.split(/\r\n|\n|\r/);
                     let count = 0;
-                    lines.forEach((l, idx) => {
-                        if(idx === 0 && l.toLowerCase().includes('date')) return;
-                        const parts = l.split(',');
+                    lines.forEach((l) => {
+                        let cleanLine = l.trim();
+                        if (cleanLine.charCodeAt(0) === 0xFEFF) cleanLine = cleanLine.slice(1);
+                        if(!cleanLine || cleanLine.toLowerCase().includes('date')) return; // skip header
+
+                        const parts = cleanLine.split(/,|;/);
                         if(parts.length >= 3) {
                             let d = parts[0].trim().replace(/\//g, '-');
                             const t = parts[1].trim(); 
@@ -401,12 +425,9 @@
                 if(!val) return;
                 const d = new Date(val);
                 const status = getDayStatus(d);
-                
-                // Smart auto-select Logic
-                let defaultStd = 9; // Normal Day
-                if(status.isOff) defaultStd = 0; // Holiday/Sunday
-                else if(status.type === 'WORK_SAT') defaultStd = 4; // Shift Saturday
-                
+                let defaultStd = 9; 
+                if(status.isOff) defaultStd = 0; 
+                else if(status.type === 'WORK_SAT') defaultStd = 4; // Auto switch to 4h for Saturday
                 window.app.setStdHours(defaultStd);
             }
         };
@@ -437,7 +458,7 @@
                     if(!s.holidays.some(h=>h.date===cStr)) { if(cStr===dStr) break; cnt++; }
                     curr.setDate(curr.getDate()+7);
                 }
-                return (cnt%2===0) ? { type: 'WORK_SAT', name: '長週上班', isOff: false } : { type: 'OFF_SAT', name: '短週休假', isOff: true };
+                return (cnt%2===0) ? { type: 'WORK_SAT', name: '長週上班', isOff: false } : { type: 'OFF', name: '短週休假', isOff: true };
             }
             return { type: 'WORK', name: '工作日', isOff: false };
         }
@@ -504,7 +525,7 @@
             document.getElementById('recModal').classList.add('open');
             const dStr = selectedDate.toISOString().split('T')[0];
             document.getElementById('inpDate').value = dStr;
-            window.app.onModalDateChange(dStr); // Trigger auto-select logic on open
+            window.app.onModalDateChange(dStr); 
 
             if(r) { 
                 editId=r.id; 
@@ -514,9 +535,6 @@
                 if(r.type==='OT') document.getElementById('inpHours').value=r.val; 
                 else{ document.getElementById('inpLeaveType').value=r.subType; document.getElementById('inpDays').value=r.val; } 
                 document.getElementById('btnDel').style.display='block'; 
-                
-                // For existing records, we might want to guess standard hours or just leave it at 9?
-                // Re-triggering date change logic is safer to get defaults correct
                 window.app.onModalDateChange(r.date);
             } else { 
                 editId=null; 
