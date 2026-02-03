@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work-Life Balance v3.5</title>
+    <title>Work-Life Balance v3.6 (Rescue)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -161,7 +161,7 @@
     </div>
 
     <header>
-        <h1>WLB <span class="ver-tag">v3.5</span> <div class="status-dot" id="statusDot"></div></h1>
+        <h1>WLB <span class="ver-tag">v3.6</span> <div class="status-dot" id="statusDot"></div></h1>
         <div class="header-actions">
             <button class="btn-icon">
                 <i class="fa-solid fa-calendar-days"></i>
@@ -270,10 +270,9 @@
             <button class="btn btn-primary" onclick="window.app.saveSettings(this)">儲存設定</button>
 
             <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-            <h4 style="color:#ef4444; margin:0">數據診斷區 (Debug)</h4>
-            <p style="font-size:0.8rem; color:#666;">如果資料看不到，請點下方按鈕檢查。</p>
-            <button class="btn btn-outline" onclick="window.app.showDebugData()">顯示所有原始資料</button>
-            <div id="rescueBox" class="rescue-box"></div>
+            <h4 style="color:#ef4444; margin:0">數據救援區</h4>
+            <p style="font-size:0.8rem; color:#666;">如果資料不見了，請嘗試點擊下方按鈕合併舊版資料。</p>
+            <button class="btn btn-outline" style="border-color:#ef4444; color:#ef4444" onclick="window.app.mergeOldData(this)">♻️ 從舊版本合併資料</button>
         </div>
     </div>
 
@@ -344,7 +343,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // CONFIG
         const firebaseConfig = {
@@ -360,6 +359,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const docRef = doc(db, "worklife_app", "personal_data_v2");
+        const docRefOld = doc(db, "worklife_app", "personal_data"); // For Rescue
 
         const PRESET_HOLIDAYS = [
             {date:"2025-01-01",name:"元旦"},{date:"2025-01-29",name:"農曆年初一"},{date:"2025-01-30",name:"農曆年初二"},{date:"2025-01-31",name:"農曆年初三"},{date:"2025-04-04",name:"清明節"},{date:"2025-04-18",name:"耶穌受難節"},{date:"2025-04-19",name:"耶穌受難節翌日"},{date:"2025-04-21",name:"復活節星期一"},{date:"2025-05-01",name:"勞動節"},{date:"2025-05-05",name:"佛誕"},{date:"2025-05-31",name:"端午節"},{date:"2025-07-01",name:"香港特別行政區成立紀念日"},{date:"2025-10-01",name:"國慶日"},{date:"2025-10-07",name:"中秋節翌日"},{date:"2025-10-29",name:"重陽節"},{date:"2025-12-25",name:"聖誕節"},{date:"2025-12-26",name:"聖誕節後第一個周日"},
@@ -448,14 +448,38 @@
                 } catch(e) { alert("❌ 錯誤"); }
                 finally { btn.innerText = originalText; btn.disabled = false; }
             },
-            showDebugData: () => {
-                const box = document.getElementById('rescueBox');
-                box.style.display = 'block';
-                if(!localData.records || localData.records.length === 0) {
-                    box.innerText = "資料庫是空的 (0 筆紀錄)。可能是被覆蓋了。";
-                } else {
-                    box.innerText = JSON.stringify(localData.records, null, 2);
-                }
+            // RESCUE FUNCTION
+            mergeOldData: async (btn) => {
+                btn.innerText = "正在搜尋舊資料..."; btn.disabled = true;
+                try {
+                    const oldSnap = await getDoc(docRefOld);
+                    if(oldSnap.exists()) {
+                        const oldData = oldSnap.data();
+                        if(oldData.records && oldData.records.length > 0) {
+                            let count = 0;
+                            oldData.records.forEach(r => {
+                                // Add if not duplicate ID
+                                if(!localData.records.some(existing => existing.id === r.id)) {
+                                    r.date = r.date.replace(/\//g, '-'); // Fix format
+                                    localData.records.push(r);
+                                    count++;
+                                }
+                            });
+                            if(count > 0) {
+                                await pushToCloud();
+                                alert(`成功找回 ${count} 筆舊資料！請重新整理頁面。`);
+                                location.reload();
+                            } else {
+                                alert("舊資料庫中有資料，但似乎都已存在於目前版本中。");
+                            }
+                        } else {
+                            alert("舊資料庫是空的。");
+                        }
+                    } else {
+                        alert("找不到舊版本資料庫。");
+                    }
+                } catch(e) { alert("讀取失敗：" + e.message); }
+                finally { btn.innerText = "♻️ 從舊版本合併資料"; btn.disabled = false; }
             },
             navHolidayMonth: (d) => {
                 holidayCalDate.setMonth(holidayCalDate.getMonth() + d);
