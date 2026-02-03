@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work-Life Balance v2.7</title>
+    <title>Work-Life Balance</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-body: #fdfcf8; --surface: #ffffff;
@@ -13,6 +14,7 @@
             --tag-ot: #f2ebe6; --tag-ot-text: #6e5d53;
             --tag-off: #e6f0e6; --tag-off-text: #5d7a5f;
             --radius: 18px; --shadow: 0 4px 20px rgba(140, 123, 112, 0.06);
+            --red-dot: #e11d48;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: "Hiragino Sans", "PingFang TC", sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -33,8 +35,6 @@
         .date-scroller { display: flex; overflow-x: auto; gap: 8px; padding: 0 24px; scrollbar-width: none; }
         .date-scroller::-webkit-scrollbar { display: none; }
         .date-chip { min-width: 52px; height: 68px; background: var(--surface); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); flex-shrink: 0; cursor: pointer; transition: 0.2s; border: 1px solid var(--line); position: relative; }
-        .date-chip span:first-child { font-size: 0.7rem; margin-bottom: 2px; }
-        .date-chip span:last-child { font-size: 1.1rem; font-weight: 700; }
         .date-chip.active { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(140, 123, 112, 0.3); }
         .date-chip.is-holiday { border-color: #fca5a5; background: #fff1f2; color: #e11d48; }
         .date-chip.active.is-holiday { background: var(--primary); border-color: transparent; color: white; }
@@ -49,7 +49,7 @@
         .stat-big { font-size: 2.4rem; font-weight: 700; line-height: 1; margin: 5px 0; }
         .stat-lbl { font-size: 0.8rem; opacity: 0.9; font-weight: 500;}
 
-        /* Lists */
+        /* List Items */
         .log-item { display: flex; align-items: center; padding: 14px; background: var(--surface); border-radius: 16px; margin-bottom: 10px; border: 1px solid var(--line); }
         .log-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 1rem; }
         .icon-ot { background: var(--tag-ot); color: var(--tag-ot-text); }
@@ -59,13 +59,26 @@
         .log-date { font-size: 0.75rem; color: var(--text-sub); margin-top: 2px; }
         .log-val { font-weight: 700; color: var(--primary-dark); font-size: 1rem;}
 
-        /* Settings UI */
-        .import-box { border: 2px dashed #d4c5b9; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; background: #faf9f7; cursor: pointer; transition: 0.2s; }
-        .import-box p { margin: 0; font-size: 0.85rem; color: var(--text-main); font-weight: 600; }
-        .import-box span { font-size: 0.75rem; color: var(--text-sub); }
-        .holiday-list { max-height: 150px; overflow-y: auto; background: #faf9f7; border-radius: 12px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--line); }
-        .holiday-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .holiday-date { color: var(--text-sub); font-size: 0.8rem; margin-right: 10px; }
+        /* Chart Section */
+        .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 20px; }
+        h4 { margin: 20px 0 10px 0; color: var(--text-main); font-size: 1rem; }
+
+        /* Holiday Calendar (Apple Style) */
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px; }
+        .cal-title { font-weight: 700; font-size: 1rem; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-head { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 5px; }
+        .cal-cell { 
+            aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            border-radius: 50%; font-size: 0.9rem; cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .cal-cell:hover { background: #f3f4f6; }
+        .cal-cell.is-holiday { background: #fee2e2; color: #b91c1c; font-weight: bold; }
+        .cal-cell.is-holiday::after { content:''; position:absolute; bottom:4px; width:4px; height:4px; border-radius:50%; background:#b91c1c; }
+        .cal-cell.today { border: 1px solid var(--primary); color: var(--primary); }
+        .cal-nav-btn { background:none; border:none; color:var(--primary); font-size:1.2rem; cursor:pointer; }
+
+        /* UI Elements */
         .toggle-group { display:flex; gap:10px; margin-bottom:10px; }
         .toggle-opt { flex:1; padding:12px; border:2px solid var(--line); border-radius:12px; background:#fff; color:var(--text-sub); font-size:0.9rem; font-weight:600; text-align:center; cursor:pointer; }
         .toggle-opt.active { border-color:var(--primary); color:var(--primary-dark); background:#fdfbf9; }
@@ -77,7 +90,6 @@
         .btn-primary { background: var(--primary-dark); color: white; box-shadow: 0 4px 12px rgba(94, 80, 70, 0.2); }
         .btn-outline { background: transparent; border: 2px solid #ef4444; color: #ef4444; margin-top: 10px; }
         
-        /* Std Hour Selector */
         .std-hours-group { display: flex; gap: 8px; margin-bottom: 15px; }
         .std-btn { flex: 1; padding: 10px 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--text-sub); cursor: pointer; font-size: 0.85rem; transition: 0.2s; text-align: center;}
         .std-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
@@ -105,13 +117,13 @@
     </div>
 
     <header>
-        <h1>WLB <span class="ver-tag">v2.7</span> <div class="status-dot" id="statusDot"></div></h1>
+        <h1>WLB <span class="ver-tag">v2.8</span> <div class="status-dot" id="statusDot"></div></h1>
         <div class="header-actions">
             <button class="btn-icon">
                 <i class="fa-solid fa-calendar-days"></i>
                 <input type="month" id="dateJumper" onchange="window.app.jumpToDate(this.value)">
             </button>
-            <button class="btn-icon" onclick="window.app.openSettings()"><i class="fa-solid fa-sliders"></i></button>
+            <button class="btn-icon" onclick="window.app.openSettings()"><i class="fa-solid fa-gear"></i></button>
         </div>
     </header>
 
@@ -142,6 +154,22 @@
             <div id="dayRecords"></div>
         </div>
 
+        <div id="tab-stats" class="tab-content">
+            <h3>數據分析</h3>
+            <div class="card">
+                <h4>OT 時段分佈</h4>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h4>每月 OT 趨勢</h4>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         <div id="tab-logs" class="tab-content">
             <h3>歷史紀錄</h3>
             <div id="fullList"></div>
@@ -152,12 +180,13 @@
 
     <nav class="bottom-nav">
         <button class="nav-btn active" onclick="window.app.switchTab('home')" id="nav-home"><i class="fa-solid fa-calendar-week"></i> 日程</button>
+        <button class="nav-btn" onclick="window.app.switchTab('stats')" id="nav-stats"><i class="fa-solid fa-chart-pie"></i> 統計</button>
         <button class="nav-btn" onclick="window.app.switchTab('logs')" id="nav-logs"><i class="fa-solid fa-clock-rotate-left"></i> 紀錄</button>
     </nav>
 
     <div class="modal-overlay" id="setModal" onclick="if(event.target===this) document.getElementById('setModal').classList.remove('open')">
         <div class="modal-card">
-            <h3 style="margin-top:0">設定與資料</h3>
+            <h3 style="margin-top:0">設定</h3>
             
             <label class="form-label">工作模式</label>
             <div class="toggle-group">
@@ -169,19 +198,18 @@
                 <input type="date" class="form-input" id="setBaseSat">
             </div>
 
-            <label class="form-label" style="display:flex; justify-content:space-between;">
-                假期管理 <span style="color:var(--primary); cursor:pointer; font-size:0.8rem;" onclick="window.app.clearHolidays()">清空</span>
-            </label>
-            <div class="holiday-list" id="holidayListDisplay"></div>
-            
-            <input type="file" id="fileHoliday" accept=".csv" style="display:none" onchange="window.app.importHolidays(this)">
-            <div class="import-box" onclick="document.getElementById('fileHoliday').click()">
-                <i class="fa-solid fa-file-csv"></i><p>匯入假期 Excel (.csv)</p><span>格式: YYYY-MM-DD, 節日名稱</span>
-            </div>
-
-            <input type="file" id="fileRecord" accept=".csv" style="display:none" onchange="window.app.importRecords(this)">
-            <div class="import-box" onclick="document.getElementById('fileRecord').click()">
-                <i class="fa-solid fa-table"></i><p>匯入歷史紀錄 Excel (.csv)</p><span>格式: 日期, 類型, 數值, 備註</span>
+            <label class="form-label">假期管理 (點擊日期設定)</label>
+            <div style="background:#faf9f7; padding:15px; border-radius:16px; border:1px solid var(--line);">
+                <div class="cal-header">
+                    <button class="cal-nav-btn" onclick="window.app.navHolidayMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                    <span class="cal-title" id="holCalTitle"></span>
+                    <button class="cal-nav-btn" onclick="window.app.navHolidayMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div class="cal-grid">
+                    <div class="cal-head">日</div><div class="cal-head">一</div><div class="cal-head">二</div><div class="cal-head">三</div><div class="cal-head">四</div><div class="cal-head">五</div><div class="cal-head">六</div>
+                </div>
+                <div class="cal-grid" id="holCalBody"></div>
+                <p style="text-align:center; font-size:0.75rem; color:var(--text-sub); margin-top:10px;">🔴 紅色代表已設定為假期</p>
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
@@ -214,10 +242,10 @@
                 <div id="secOT">
                     <label class="form-label">當日扣除工時 (小時)</label>
                     <div class="std-hours-group">
-                        <button type="button" class="std-btn active" id="btnStd9" onclick="window.app.setStdHours(9)">9h (平日)</button>
+                        <button type="button" class="std-btn active" id="btnStd9" onclick="window.app.setStdHours(9)">9h</button>
                         <button type="button" class="std-btn" id="btnStd8" onclick="window.app.setStdHours(8)">8h</button>
-                        <button type="button" class="std-btn" id="btnStd4" onclick="window.app.setStdHours(4)">4h (週六)</button>
-                        <button type="button" class="std-btn" id="btnStd0" onclick="window.app.setStdHours(0)">0h (假日)</button>
+                        <button type="button" class="std-btn" id="btnStd4" onclick="window.app.setStdHours(4)">4h</button>
+                        <button type="button" class="std-btn" id="btnStd0" onclick="window.app.setStdHours(0)">0h</button>
                     </div>
                     <input type="number" id="inpStdVal" value="9" style="display:none;"> 
 
@@ -226,7 +254,7 @@
                         <div><label class="form-label">下班</label><input type="time" class="form-input" id="inpOut" onchange="window.app.calcOT()"></div>
                     </div>
                     <div id="otMsg" style="text-align:right; font-size:0.8rem; color:var(--primary); margin-top:8px; height:1.2em;"></div>
-                    <label class="form-label">OT 時數 (自動計算)</label><input type="number" step="0.1" class="form-input" id="inpHours" placeholder="結果">
+                    <label class="form-label">OT 時數</label><input type="number" step="0.1" class="form-input" id="inpHours" placeholder="結果">
                 </div>
 
                 <div id="secLeave" style="display:none;">
@@ -259,9 +287,10 @@
         const db = getFirestore(app);
         const docRef = doc(db, "worklife_app", "personal_data_v2");
 
-        // *** 自動內建的完整假期資料 (2025-2026) ***
+        // 內建完整假期 (2025-2026)
         const PRESET_HOLIDAYS = [
-            {date:"2025-01-01",name:"元旦"},{date:"2025-01-29",name:"農曆年初一"},{date:"2025-01-30",name:"農曆年初二"},{date:"2025-01-31",name:"農曆年初三"},{date:"2025-04-04",name:"清明節"},{date:"2025-04-18",name:"耶穌受難節"},{date:"2025-04-19",name:"耶穌受難節翌日"},{date:"2025-04-21",name:"復活節星期一"},{date:"2025-05-01",name:"勞動節"},{date:"2025-05-05",name:"佛誕"},{date:"2025-05-31",name:"端午節"},{date:"2025-07-01",name:"香港特別行政區成立紀念日"},{date:"2025-10-01",name:"國慶日"},{date:"2025-10-07",name:"中秋節翌日"},{date:"2025-10-29",name:"重陽節"},{date:"2025-12-25",name:"聖誕節"},{date:"2025-12-26",name:"聖誕節後第一個周日"},{date:"2026-01-01",name:"元旦"},{date:"2026-02-17",name:"農曆年初一"},{date:"2026-02-18",name:"農曆年初二"},{date:"2026-02-19",name:"農曆年初三"},{date:"2026-04-03",name:"耶穌受難節"},{date:"2026-04-04",name:"耶穌受難節翌日"},{date:"2026-04-06",name:"清明節翌日"},{date:"2026-04-07",name:"復活節星期一翌日"},{date:"2026-05-01",name:"勞動節"},{date:"2026-05-25",name:"佛誕翌日"},{date:"2026-06-19",name:"端午節"},{date:"2026-07-01",name:"香港特別行政區成立紀念日"},{date:"2026-09-26",name:"中秋節翌日"},{date:"2026-10-01",name:"國慶日"},{date:"2026-10-19",name:"重陽節翌日"},{date:"2026-12-25",name:"聖誕節"},{date:"2026-12-26",name:"聖誕節後第一個周日"}
+            {date:"2025-01-01",name:"元旦"},{date:"2025-01-29",name:"農曆年初一"},{date:"2025-01-30",name:"農曆年初二"},{date:"2025-01-31",name:"農曆年初三"},{date:"2025-04-04",name:"清明節"},{date:"2025-04-18",name:"耶穌受難節"},{date:"2025-04-19",name:"耶穌受難節翌日"},{date:"2025-04-21",name:"復活節星期一"},{date:"2025-05-01",name:"勞動節"},{date:"2025-05-05",name:"佛誕"},{date:"2025-05-31",name:"端午節"},{date:"2025-07-01",name:"香港特別行政區成立紀念日"},{date:"2025-10-01",name:"國慶日"},{date:"2025-10-07",name:"中秋節翌日"},{date:"2025-10-29",name:"重陽節"},{date:"2025-12-25",name:"聖誕節"},{date:"2025-12-26",name:"聖誕節後第一個周日"},
+            {date:"2026-01-01",name:"元旦"},{date:"2026-02-17",name:"農曆年初一"},{date:"2026-02-18",name:"農曆年初二"},{date:"2026-02-19",name:"農曆年初三"},{date:"2026-04-03",name:"耶穌受難節"},{date:"2026-04-04",name:"耶穌受難節翌日"},{date:"2026-04-06",name:"清明節翌日"},{date:"2026-04-07",name:"復活節星期一翌日"},{date:"2026-05-01",name:"勞動節"},{date:"2026-05-25",name:"佛誕翌日"},{date:"2026-06-19",name:"端午節"},{date:"2026-07-01",name:"香港特別行政區成立紀念日"},{date:"2026-09-26",name:"中秋節翌日"},{date:"2026-10-01",name:"國慶日"},{date:"2026-10-19",name:"重陽節翌日"},{date:"2026-12-25",name:"聖誕節"},{date:"2026-12-26",name:"聖誕節後第一個周日"}
         ];
 
         let localData = {
@@ -273,8 +302,10 @@
         };
         let selectedDate = new Date();
         let currentViewDate = new Date(); 
+        let holidayCalDate = new Date(); // Separate state for settings calendar
         let curType = 'OT';
         let editId = null;
+        let pieChart = null, barChart = null;
 
         onSnapshot(docRef, (docSnap) => {
             const loading = document.getElementById('loadingMask');
@@ -282,10 +313,9 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 if(!data.settings.workMode) data.settings.workMode = 'alt_sat';
-                // Data Migration: Ensure holidays is Array of Objects
+                // Data Migration
                 if(data.settings.holidays.length && typeof data.settings.holidays[0] === 'string') {
-                    // Try to migrate old string dates to objects
-                    data.settings.holidays = PRESET_HOLIDAYS; // Overwrite with better preset if old format detected
+                    data.settings.holidays = PRESET_HOLIDAYS; // Upgrade old data
                 }
                 localData = data;
                 dot.className = 'status-dot online';
@@ -307,7 +337,8 @@
                 document.getElementById('setJoinDate').value = s.joinDate || '';
                 document.getElementById('setAL').value = s.alBalance;
                 document.getElementById('setDaily').value = s.dailyHours;
-                renderHolidayList();
+                holidayCalDate = new Date(); // Reset cal to today
+                renderHolidayCalendar();
             },
             setWorkMode: (mode) => {
                 localData.settings.workMode = mode;
@@ -331,71 +362,25 @@
                 finally { btn.innerText = originalText; btn.disabled = false; }
             },
             
-            // *** 修正後的 CSV 匯入邏輯 (過濾 BOM) ***
-            importHolidays: (input) => {
-                const file = input.files[0]; if(!file) return;
-                const r = new FileReader();
-                r.onload = (e) => {
-                    // split by any line break type
-                    const lines = e.target.result.split(/\r\n|\n|\r/); 
-                    let count = 0;
-                    lines.forEach((l) => {
-                        // Clean line content (remove BOM or weird chars)
-                        let cleanLine = l.trim();
-                        // Remove Byte Order Mark if present at start of first line
-                        if (cleanLine.charCodeAt(0) === 0xFEFF) {
-                            cleanLine = cleanLine.slice(1);
-                        }
-                        if(!cleanLine) return;
-
-                        // Allow comma or semicolon separator
-                        const parts = cleanLine.split(/,|;/); 
-                        if(parts.length >= 2) {
-                            let d = parts[0].trim().replace(/\//g, '-');
-                            const n = parts[1].trim();
-                            if(/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-                                if(!localData.settings.holidays.some(h=>h.date===d)) {
-                                    localData.settings.holidays.push({date: d, name: n}); count++;
-                                }
-                            }
-                        }
-                    });
-                    renderHolidayList(); 
-                    if(count === 0) alert("匯入 0 筆。請檢查 CSV 格式是否為 YYYY-MM-DD,名稱");
-                    else alert(`成功匯入 ${count} 個假期`); 
-                    input.value='';
-                }; r.readAsText(file);
+            // Visual Holiday Calendar Logic
+            navHolidayMonth: (d) => {
+                holidayCalDate.setMonth(holidayCalDate.getMonth() + d);
+                renderHolidayCalendar();
             },
-            importRecords: (input) => {
-                const file = input.files[0]; if(!file) return;
-                const r = new FileReader();
-                r.onload = async (e) => {
-                    const lines = e.target.result.split(/\r\n|\n|\r/);
-                    let count = 0;
-                    lines.forEach((l) => {
-                        let cleanLine = l.trim();
-                        if (cleanLine.charCodeAt(0) === 0xFEFF) cleanLine = cleanLine.slice(1);
-                        if(!cleanLine || cleanLine.toLowerCase().includes('date')) return; // skip header
-
-                        const parts = cleanLine.split(/,|;/);
-                        if(parts.length >= 3) {
-                            let d = parts[0].trim().replace(/\//g, '-');
-                            const t = parts[1].trim(); 
-                            const v = parts[2].trim();
-                            if(/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-                                localData.records.push({
-                                    id: Date.now()+Math.random(), date: d, type: t,
-                                    subType: t==='Leave'?'AL':null, val: v, note: parts[3]?parts[3].trim():''
-                                }); count++;
-                            }
-                        }
-                    });
-                    await pushToCloud(); alert(`成功匯入 ${count} 筆紀錄`); input.value='';
-                }; r.readAsText(file);
+            toggleHoliday: (dStr) => {
+                const exists = localData.settings.holidays.find(h => h.date === dStr);
+                if(exists) {
+                    if(confirm(`移除 ${dStr} (${exists.name}) 假期？`)) {
+                        localData.settings.holidays = localData.settings.holidays.filter(h => h.date !== dStr);
+                    }
+                } else {
+                    const name = prompt(`將 ${dStr} 設為假期，請輸入名稱：`, "休假");
+                    if(name) localData.settings.holidays.push({date: dStr, name: name});
+                }
+                renderHolidayCalendar();
             },
-            clearHolidays: () => { if(confirm("確定清空？")) { localData.settings.holidays=[]; renderHolidayList(); } },
-            deleteHoliday: (d) => { localData.settings.holidays = localData.settings.holidays.filter(h=>h.date!==d); renderHolidayList(); },
-            
+            clearHolidays: () => { if(confirm("確定清空所有假期？")) { localData.settings.holidays=[]; renderHolidayCalendar(); } },
+
             triggerAdd: () => openModal(),
             closeModal: () => document.getElementById('recModal').classList.remove('open'),
             switchTab: (t) => {
@@ -403,6 +388,7 @@
                 document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
                 document.getElementById(`tab-${t}`).classList.add('active');
                 document.getElementById(`nav-${t}`).classList.add('active');
+                if(t === 'stats') renderCharts();
             },
             setType: (t) => setType(t), 
             setStdHours: (h) => {
@@ -427,15 +413,93 @@
                 const status = getDayStatus(d);
                 let defaultStd = 9; 
                 if(status.isOff) defaultStd = 0; 
-                else if(status.type === 'WORK_SAT') defaultStd = 4; // Auto switch to 4h for Saturday
+                else if(status.type === 'WORK_SAT') defaultStd = 4;
                 window.app.setStdHours(defaultStd);
             }
         };
 
-        function renderHolidayList() {
-            const list = document.getElementById('holidayListDisplay');
-            const sorted = [...localData.settings.holidays].sort((a,b) => a.date.localeCompare(b.date));
-            list.innerHTML = sorted.length ? sorted.map(h => `<div class="holiday-item"><span><span class="holiday-date">${h.date}</span><span>${h.name}</span></span><i class="fa-solid fa-trash" style="color:#ef4444;cursor:pointer" onclick="window.app.deleteHoliday('${h.date}')"></i></div>`).join('') : '<div style="text-align:center;color:#ccc;font-size:0.8rem">無假期資料</div>';
+        // Render Apple-style Calendar in Settings
+        function renderHolidayCalendar() {
+            const grid = document.getElementById('holCalBody');
+            grid.innerHTML = '';
+            const year = holidayCalDate.getFullYear();
+            const month = holidayCalDate.getMonth();
+            document.getElementById('holCalTitle').innerText = `${year}年 ${month+1}月`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            for(let i=0; i<firstDay; i++) grid.innerHTML += '<div></div>';
+
+            for(let i=1; i<=daysInMonth; i++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                const isHol = localData.settings.holidays.some(h => h.date === dateStr);
+                const isToday = dateStr === todayStr;
+                
+                const el = document.createElement('div');
+                el.className = `cal-cell ${isHol?'is-holiday':''} ${isToday?'today':''}`;
+                el.innerText = i;
+                el.onclick = () => window.app.toggleHoliday(dateStr);
+                grid.appendChild(el);
+            }
+        }
+
+        function renderCharts() {
+            if(pieChart) pieChart.destroy();
+            if(barChart) barChart.destroy();
+
+            const otRecords = localData.records.filter(r => r.type === 'OT');
+            
+            // 1. Pie Chart Data
+            let dist = { work: 0, sat: 0, holiday: 0 };
+            otRecords.forEach(r => {
+                const d = new Date(r.date);
+                const status = getDayStatus(d);
+                const val = parseFloat(r.val);
+                if(status.type === 'HOLIDAY' || d.getDay()===0) dist.holiday += val;
+                else if(d.getDay()===6) dist.sat += val;
+                else dist.work += val;
+            });
+
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['工作日', '週六', '紅日/週日'],
+                    datasets: [{
+                        data: [dist.work, dist.sat, dist.holiday],
+                        backgroundColor: ['#f87171', '#60a5fa', '#fbbf24']
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // 2. Bar Chart Data (Monthly)
+            let monthly = {};
+            otRecords.forEach(r => {
+                const key = r.date.substring(0, 7); // YYYY-MM
+                if(!monthly[key]) monthly[key] = 0;
+                monthly[key] += parseFloat(r.val);
+            });
+            // Sort keys
+            const labels = Object.keys(monthly).sort();
+            const data = labels.map(k => monthly[k]);
+
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'OT 時數',
+                        data: data,
+                        backgroundColor: '#d6c6b9',
+                        borderRadius: 6
+                    }]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
         }
 
         async function pushToCloud() { await setDoc(docRef, localData); }
